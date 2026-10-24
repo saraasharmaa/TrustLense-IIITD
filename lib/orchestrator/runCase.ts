@@ -10,9 +10,11 @@ import { emitEvent } from "./events";
 import { runAdapter, type AttemptedResult } from "./retry";
 import { evaluate, score } from "./temp-scoring-stub";
 import {
+  clearForRerun,
   createSourceRun,
   finishCase,
   loadCase,
+  loadKeptOutcomes,
   markCaseRunning,
   saveFindings,
   toAdapterInput,
@@ -24,6 +26,8 @@ export interface RunCaseOptions {
   backoffMs?: number;
   // Skip the source cache for this run (the ?fresh option on the API)
   fresh?: boolean;
+  // Rerun only these sources and keep the other stored runs
+  only?: AdapterId[];
 }
 
 // Progress and per-attempt events are best effort; the final events are awaited in order
@@ -63,9 +67,18 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const config = env();
   const input = toAdapterInput(subject);
   const requested = ADAPTER_ORDER.filter((id) => caseRow.requestedSources.includes(id));
+  const toRun = options.only ? requested.filter((id) => options.only?.includes(id)) : requested;
+
+  const outcomes: SourceOutcomes = {};
+  const statuses: SourceStatus[] = [];
+  if (options.only) {
+    await clearForRerun(caseId, toRun);
+    Object.assign(outcomes, await loadKeptOutcomes(caseId));
+    statuses.push(...Object.values(outcomes).map((o) => o.status));
+  }
 
   await markCaseRunning(caseId);
-  await emitEvent(caseId, "case.started", { caseId, adapters: requested, mode: caseRow.mode });
+  await emitEvent(caseId, "case.started", { caseId, adapters: toRun, mode: caseRow.mode });
 
   const caseController = new AbortController();
   const capTimer = setTimeout(
@@ -82,8 +95,6 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const withCacheIfAllowed = (adapter: SourceAdapter<unknown>) =>
     useCache ? withCache(adapter, config.SOURCE_CACHE_TTL_SECONDS) : adapter;
 
-  const outcomes: SourceOutcomes = {};
-  const statuses: SourceStatus[] = [];
   const limit = pLimit(config.MAX_PARALLEL_ADAPTERS);
 
   async function runSource(id: AdapterId, adapter: SourceAdapter<unknown>) {
@@ -133,6 +144,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
       isReplay: result.isReplay,
       durationMs,
       tinyfishRunId: result.tinyfishRunId,
+      evidenceUrl: result.evidenceUrl,
       steps,
       rawOutput: result.rawOutput,
       normalized: result.normalized,
@@ -185,15 +197,18 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     });
   }
 
-  await Promise.all(
-    requested.map((id) => {
-      const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
-      return limit(() =>
-        hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
-      );
-    }),
-  );
-  clearTimeout(capTimer);
+  try {
+    await Promise.all(
+      toRun.map((id) => {
+        const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
+        return limit(() =>
+          hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
+        );
+      }),
+    );
+  } finally {
+    clearTimeout(capTimer);
+  }
 
   const status = caseStatus(statuses);
   if (status === "failed") {

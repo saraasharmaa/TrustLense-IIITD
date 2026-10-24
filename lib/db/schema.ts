@@ -113,6 +113,8 @@ export const sourceRuns = pgTable(
     finishedAt: ts("finished_at"),
     durationMs: integer("duration_ms"),
     tinyfishRunId: text("tinyfish_run_id"),
+    // Kept so reruns and the monitor can rebuild evidence from a stored run
+    evidenceUrl: text("evidence_url"),
     steps: jsonb("steps").$type<{ t: string; text: string; url?: string }[]>(),
     rawOutput: jsonb("raw_output"),
     normalized: jsonb("normalized"),
