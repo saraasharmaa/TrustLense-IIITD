@@ -45,12 +45,12 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
-| M1 Demo-mode vertical slice | A part merged; B identifiers merged, B scoring in PR `feat/scoring`, B UI not started | Scoring reproduces Aravali 97/A, Sunrise 66/C and 38/D, Kaveri 9/D. A still needs to delete `temp-scoring-stub.ts` and wire `@/lib/scoring` |
+| M1 Demo-mode vertical slice | A part and B identifiers and scoring merged; real scoring wired in `feat/wire-scoring`; B UI not started | `npm run demo:check` passes: Aravali 97/A, Sunrise 66/C, Kaveri 9/D and the Sunrise simulated change raises a critical C to D alert |
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
 | M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
-| M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is covered by a test with stand-in scoring; with the real engine still unwired, `simulate-change` returns 409 "no alert" because no score exists |
-| M6 Polish + resilience | A part done on `feat/polish` (rate limit, debug page, `demo:check`); a11y, states, copy, README are B's | `npm run demo:check` currently fails on score checks because B's scoring is not wired yet |
+| M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is asserted exactly in `lib/monitor/monitor.test.ts` with the real engine (C to D, 66 to 38, critical) |
+| M6 Polish + resilience | A part done on `feat/polish` (rate limit, debug page, `demo:check`); a11y, states, copy, README are B's | `npm run demo:check` passes against a local database |
 | M7 Demo readiness | not started | |
 
 ## Spike results (fill from docs/06 §7)
