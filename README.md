@@ -78,7 +78,7 @@ POST /api/cases ─► createCase (validate ids, reuse subject) ─► runCase (
 
 **How TinyFish is used.** `lib/tinyfish/client.ts` is the only code that calls TinyFish.
 - *Agent* (`run-sse`): multi-step portal flows. GST, MCA and the Legal adapter (eCourts and IBBI) send a goal with a fixed safety preamble and validate the result with zod.
-- *Search* and *Fetch*: the News adapter searches the web, fetches each article as markdown, and has Claude classify it. Claude never touches a score; it only classifies articles and words the narrative from findings.
+- *Search* and *Fetch*: the News adapter searches the web, fetches each article as markdown, and has an LLM classify it (Anthropic, or OpenAI if `LLM_PROVIDER=openai`). The LLM never touches a score; it only classifies articles and words the narrative from findings.
 - A CAPTCHA or blocked site is recorded as `captcha_blocked`. There is no bypass.
 
 **What the report shows honestly.**
@@ -88,7 +88,7 @@ POST /api/cases ─► createCase (validate ids, reuse subject) ─► runCase (
 
 ### Run it
 ```bash
-cp .env.example .env.local        # add DATABASE_URL, TINYFISH_API_KEY, ANTHROPIC_API_KEY
+cp .env.example .env.local        # add DATABASE_URL, TINYFISH_API_KEY, and ANTHROPIC_API_KEY or OPENAI_API_KEY
 npm install
 npm run db:push && npm run db:seed
 npm run demo                      # replay mode, no keys needed beyond DATABASE_URL
