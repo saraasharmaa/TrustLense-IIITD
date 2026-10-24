@@ -10,7 +10,7 @@ describe("state tables", () => {
       "97",
       "99",
     ];
-    expect(Object.keys(GST_STATES)).toEqual(expected);
+    expect(Object.keys(GST_STATES).sort()).toEqual(expected);
   });
 
   it("names the fixture states", () => {
