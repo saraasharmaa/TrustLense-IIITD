@@ -4,7 +4,7 @@ import { ADAPTER_ORDER, getAdapter, hasRequiredInputs } from "@/lib/adapters/reg
 import type { ReplayOptions } from "@/lib/adapters/replay";
 import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
 import { env } from "@/lib/env";
-import { templateNarrative } from "@/lib/llm/template-narrative";
+import { buildNarrative } from "@/lib/llm/narrative";
 import type { AdapterId, SourceStatus } from "@/lib/types";
 import { emitEvent } from "./events";
 import { runAdapter, type AttemptedResult } from "./retry";
@@ -212,7 +212,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const result = score(findings, outcomes);
   if (result) await emitEvent(caseId, "score.computed", result);
 
-  const narrative = templateNarrative(findings, result);
+  const narrative = await buildNarrative(findings, result);
   await emitEvent(caseId, "narrative.ready", narrative);
 
   await finishCase(caseId, { status, score: result, narrative });
