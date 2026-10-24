@@ -1,0 +1,32 @@
+import { z } from "zod";
+
+const flag = z
+  .enum(["true", "false"])
+  .default("false")
+  .transform((v) => v === "true");
+
+const Env = z.object({
+  DATABASE_URL: z.string().min(1),
+  TINYFISH_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  ANTHROPIC_MODEL: z.string().default("claude-sonnet-5-5"),
+  DEMO_MODE: flag,
+  ALLOW_SIMULATION: flag,
+  APP_BASE_URL: z.string().url().default("http://localhost:3000"),
+  MAX_PARALLEL_ADAPTERS: z.coerce.number().int().positive().default(6),
+  ADAPTER_TIMEOUT_MS: z.coerce.number().int().positive().default(90000),
+  CASE_TIMEOUT_MS: z.coerce.number().int().positive().default(180000),
+  SOURCE_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(600),
+  CRON_SECRET: z.string().optional(),
+  ENABLE_INPROCESS_SCHEDULER: flag,
+});
+
+export type Env = z.infer<typeof Env>;
+
+let cached: Env | undefined;
+
+// Parsed on first use so `next build` and tests don't need a full .env
+export function env(): Env {
+  cached ??= Env.parse(process.env);
+  return cached;
+}
