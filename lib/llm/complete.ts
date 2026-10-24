@@ -3,15 +3,21 @@ import OpenAI from "openai";
 import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors";
 
-export type LlmProvider = "anthropic" | "openai";
+export type LlmProvider = "anthropic" | "openai" | "gemini";
 
-// LLM_PROVIDER wins; otherwise whichever key is set, Anthropic first
+// Gemini is called through its OpenAI-compatible endpoint, so it reuses the OpenAI SDK
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
+
+// LLM_PROVIDER wins; otherwise the first provider with a key: Anthropic, OpenAI, Gemini
 export function llmProvider(): LlmProvider | null {
-  const { LLM_PROVIDER, ANTHROPIC_API_KEY, OPENAI_API_KEY } = env();
-  if (LLM_PROVIDER === "openai") return OPENAI_API_KEY ? "openai" : null;
-  if (LLM_PROVIDER === "anthropic") return ANTHROPIC_API_KEY ? "anthropic" : null;
-  if (ANTHROPIC_API_KEY) return "anthropic";
-  return OPENAI_API_KEY ? "openai" : null;
+  const { LLM_PROVIDER, ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY } = env();
+  const keys: Record<LlmProvider, string | undefined> = {
+    anthropic: ANTHROPIC_API_KEY,
+    openai: OPENAI_API_KEY,
+    gemini: GEMINI_API_KEY,
+  };
+  if (LLM_PROVIDER) return keys[LLM_PROVIDER] ? LLM_PROVIDER : null;
+  return (["anthropic", "openai", "gemini"] as const).find((p) => keys[p]) ?? null;
 }
 
 interface Prompt {
@@ -36,12 +42,14 @@ async function askAnthropic(prompt: Prompt): Promise<string> {
   return reply.content.map((block) => (block.type === "text" ? block.text : "")).join("");
 }
 
-async function askOpenAi(prompt: Prompt): Promise<string> {
-  const { OPENAI_API_KEY, OPENAI_MODEL } = env();
-  const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+async function askOpenAiCompatible(
+  prompt: Prompt,
+  config: { apiKey: string | undefined; model: string; baseURL?: string },
+): Promise<string> {
+  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
   const reply = await client.chat.completions.create(
     {
-      model: OPENAI_MODEL,
+      model: config.model,
       max_completion_tokens: prompt.maxTokens,
       response_format: { type: "json_object" },
       messages: [
@@ -66,6 +74,16 @@ function extractJson(text: string): unknown {
 export async function completeJson(prompt: Prompt): Promise<unknown> {
   const provider = llmProvider();
   if (!provider) throw new AppError("upstream_unavailable", "No LLM API key is configured");
-  const text = provider === "openai" ? await askOpenAi(prompt) : await askAnthropic(prompt);
+  const { OPENAI_API_KEY, OPENAI_MODEL, GEMINI_API_KEY, GEMINI_MODEL } = env();
+  const text =
+    provider === "anthropic"
+      ? await askAnthropic(prompt)
+      : provider === "gemini"
+        ? await askOpenAiCompatible(prompt, {
+            apiKey: GEMINI_API_KEY,
+            model: GEMINI_MODEL,
+            baseURL: GEMINI_BASE_URL,
+          })
+        : await askOpenAiCompatible(prompt, { apiKey: OPENAI_API_KEY, model: OPENAI_MODEL });
   return extractJson(text);
 }
