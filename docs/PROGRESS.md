@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** M5 (monitor, watch/alert routes, simulate-change) on `feat/monitor`; when keys exist, put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
+- **Next up (A):** wait for B's scoring PR, then wire it in (delete `lib/orchestrator/temp-scoring-stub.ts`, point `monitor.test.ts` at the real engine and assert AC-10 exactly); then M6 (rate limit, debug page, `demo:check`) on `feat/polish`; when keys exist, put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
 - **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
 
 ## Requests for B
@@ -30,6 +30,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - Legal items now carry `matchConfidence` (0.4 base, +0.3 state, +0.2 city, +0.3 director; a different party name caps it at 0.4). Items below 0.7 must be info-only "possible match". MCA output has `registeredAddress` and GST output `principalPlace` for BIZ-03; BIZ-02 can compare `legalName`/`companyName`/`enterpriseName`.
 - MCA directors are saved on the subject after a successful run, but news/legal in the same run start in parallel, so they only benefit on the next run or rerun.
 
+- Monitoring API: `POST /api/cases/:id/watch {frequencyHours: 6|24|168, adapters?}` (409 if already watched or the case is unfinished), `GET /api/watches`, `PATCH /api/watches/:id` (204), `GET /api/alerts?unread=1`, `POST /api/alerts/:id/ack` (204), `POST /api/demo/simulate-change {watchId}` (only with `DEMO_MODE` or `ALLOW_SIMULATION`). A monitoring case has `triggeredBy: "monitor"|"simulation"`; its carried-forward sources show `carried_forward` in `sourceRuns`? No: carried sources have no new run row, so the UI should say "carried forward" for categories whose adapter is missing from that case's `sourceRuns`.
+
 ## Requests for A
 
 - 
@@ -43,7 +45,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
 | M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
-| M5 Monitoring | not started | |
+| M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is covered by a test with stand-in scoring; with the real engine still unwired, `simulate-change` returns 409 "no alert" because no score exists |
 | M6 Polish + resilience | not started | |
 | M7 Demo readiness | not started | |
 
@@ -78,6 +80,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 Reruns bypass the source cache, rerun by default only failed/timeout/captcha_blocked sources, and refuse while a case is running (409).
 - 2026-10-24 Legal runs two agents (eCourts case search and IBBI public announcements) and is only `succeeded`/`not_found` if both were reached; a block or error on either is reported as that status so a blocked source never reads as "no cases". NCLT cause lists are not covered yet.
 - 2026-10-24 Legal items gain optional `partyName`/`partyDetails` (as shown on the page) so match confidence can be computed; they are not used for scoring.
+- 2026-10-24 Monitoring carries clean results (succeeded/not_found) over from the previous case as `carried_forward` and re-checks only the watch's adapters (default gst, news); monitor runs skip the source cache.
+- 2026-10-24 `simulate-change` replays fixture snapshot `t1` in demo mode against the watch's last case; it returns 409 rather than inventing an alert when nothing changed or no score exists.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 
 ## Blocked / questions for humans
