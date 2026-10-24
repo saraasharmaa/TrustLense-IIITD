@@ -30,6 +30,8 @@ export interface RunCaseOptions {
   fresh?: boolean;
   // Rerun only these sources and keep the other stored runs
   only?: AdapterId[];
+  // With `only`: take the other sources from this earlier case (monitoring) instead of this case
+  carryForwardFrom?: string;
 }
 
 // Progress and per-attempt events are best effort; the final events are awaited in order
@@ -41,7 +43,7 @@ function fireEvent(...args: Parameters<typeof emitEvent>): void {
 
 const PROGRESS_INTERVAL_MS = 500;
 const MAX_STEPS = 50;
-const DATA_STATUSES: SourceStatus[] = ["succeeded", "not_found"];
+const DATA_STATUSES: SourceStatus[] = ["succeeded", "not_found", "carried_forward"];
 
 function summarize(adapter: string, result: AttemptedResult): string {
   if (result.status === "succeeded") return `${adapter}: record retrieved`;
@@ -70,6 +72,27 @@ function directorsOf(normalized: unknown): { din?: string; name: string }[] {
   return parsed.data.directors.map((d) => ({ din: d.din ?? undefined, name: d.name }));
 }
 
+// A rerun keeps this case's other stored runs; monitoring carries clean results over from the
+// previous case and labels them so coverage and the UI show they were not re-checked
+async function keptOutcomes(
+  caseId: string,
+  rerunning: AdapterId[],
+  carryFrom?: string,
+): Promise<SourceOutcomes> {
+  if (!carryFrom || carryFrom === caseId) {
+    await clearForRerun(caseId, rerunning);
+    return loadKeptOutcomes(caseId);
+  }
+  const carried: SourceOutcomes = {};
+  for (const [id, outcome] of Object.entries(await loadKeptOutcomes(carryFrom))) {
+    const clean = outcome.status === "succeeded" || outcome.status === "not_found";
+    if (clean && !rerunning.includes(id as AdapterId)) {
+      carried[id as AdapterId] = { ...outcome, status: "carried_forward" };
+    }
+  }
+  return carried;
+}
+
 async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const { case: caseRow, subject } = await loadCase(caseId);
   const config = env();
@@ -80,8 +103,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const outcomes: SourceOutcomes = {};
   const statuses: SourceStatus[] = [];
   if (options.only) {
-    await clearForRerun(caseId, toRun);
-    Object.assign(outcomes, await loadKeptOutcomes(caseId));
+    Object.assign(outcomes, await keptOutcomes(caseId, toRun, options.carryForwardFrom));
     statuses.push(...Object.values(outcomes).map((o) => o.status));
   }
 
