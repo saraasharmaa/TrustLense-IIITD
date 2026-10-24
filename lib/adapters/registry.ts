@@ -1,5 +1,6 @@
 import type { AdapterId } from "@/lib/types";
 import { gstAdapter } from "./gst";
+import { newsAdapter } from "./news";
 import { replayAdapter, type ReplayOptions } from "./replay";
 import type { AdapterInput, SourceAdapter } from "./types";
 
@@ -9,6 +10,7 @@ export const ADAPTER_ORDER: AdapterId[] = ["gst", "news", "mca", "legal", "udyam
 // Live adapters register here as they are built (M2 onwards)
 const liveAdapters: Partial<Record<AdapterId, SourceAdapter<unknown>>> = {
   gst: gstAdapter,
+  news: newsAdapter,
 };
 
 // A source with no live adapter is reported as skipped, never filled with replay data
