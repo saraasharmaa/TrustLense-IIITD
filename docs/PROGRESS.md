@@ -2,6 +2,24 @@
 
 Update at the end of every milestone. Keep it short and factual.
 
+## Next up
+
+- **Next up (A):** M1 on `feat/orchestrator` (adapters, replay wrapper, orchestrator, case routes, SSE).
+- **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
+
+## Requests for B
+
+Scoring and identifiers are called by A's orchestrator through these signatures. Tell A in this section if B needs a different shape.
+
+- `evaluate(outcomes: SourceOutcomes, ctx: { now: Date; requested: AdapterId[] }): Finding[]` — `SourceOutcomes`/`SourceOutcome` are in `lib/adapters/types.ts`. `normalized` is the zod-parsed adapter output (`lib/adapters/schemas.ts`); replay payloads have `status: "ok"` inside it. Each finding's evidence uses `outcome.evidenceUrl`, `outcome.retrievedAt`, `outcome.sourceRunId` and `outcome.isReplay`.
+- `score(findings: Finding[], outcomes: SourceOutcomes): ScoreResult` — coverage counts `succeeded`, `not_found` and `carried_forward`.
+- `validateGstin(input: string)` returning the derived PAN, state code, state name and entity type, or throwing `AppError("invalid_identifier", ...)`; same shape for CIN and Udyam.
+- `lib/types.ts` and `lib/db/schema.ts` are A's; ask A before editing.
+
+## Requests for A
+
+- 
+
 ## Status
 
 | Milestone | Status | Notes |
@@ -42,7 +60,8 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Blocked / questions for humans
 
-- 
+- `gh` (GitHub CLI) is not installed on this machine, so A cannot open PRs, list B's PRs or merge. `feat/scaffold` is pushed; open its PR from the GitHub link, or install and log in to `gh`.
+- `.env.local` does not exist yet, so nothing has run against Postgres.
 
 ## TinyFish API facts confirmed from live docs
 
