@@ -135,3 +135,11 @@ export async function loadKeptOutcomes(caseId: string): Promise<SourceOutcomes> 
   }
   return outcomes;
 }
+
+// Directors found on MCA are reused to disambiguate news and legal matches
+export async function saveDirectors(
+  subjectId: string,
+  directors: { din?: string; name: string }[],
+): Promise<void> {
+  await db().update(subjects).set({ directors }).where(eq(subjects.id, subjectId));
+}

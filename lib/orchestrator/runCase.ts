@@ -1,5 +1,6 @@
 import pLimit from "p-limit";
 import { withCache } from "@/lib/adapters/cache";
+import { McaOutput } from "@/lib/adapters/schemas";
 import { ADAPTER_ORDER, getAdapter, hasRequiredInputs } from "@/lib/adapters/registry";
 import type { ReplayOptions } from "@/lib/adapters/replay";
 import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
@@ -16,6 +17,7 @@ import {
   loadCase,
   loadKeptOutcomes,
   markCaseRunning,
+  saveDirectors,
   saveFindings,
   toAdapterInput,
   updateSourceRun,
@@ -62,6 +64,12 @@ export async function runCase(caseId: string, options: RunCaseOptions = {}): Pro
   }
 }
 
+function directorsOf(normalized: unknown): { din?: string; name: string }[] {
+  const parsed = McaOutput.safeParse(normalized);
+  if (!parsed.success || parsed.data.status !== "ok") return [];
+  return parsed.data.directors.map((d) => ({ din: d.din ?? undefined, name: d.name }));
+}
+
 async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const { case: caseRow, subject } = await loadCase(caseId);
   const config = env();
@@ -96,6 +104,11 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     useCache ? withCache(adapter, config.SOURCE_CACHE_TTL_SECONDS) : adapter;
 
   const limit = pLimit(config.MAX_PARALLEL_ADAPTERS);
+
+  async function rememberDirectors(normalized: unknown) {
+    const directors = directorsOf(normalized);
+    if (directors.length) await saveDirectors(subject.id, directors);
+  }
 
   async function runSource(id: AdapterId, adapter: SourceAdapter<unknown>) {
     const isReplay = caseRow.mode === "demo";
@@ -151,6 +164,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
       error: result.error,
     });
 
+    if (id === "mca" && result.status === "succeeded") await rememberDirectors(result.normalized);
     statuses.push(result.status);
     outcomes[id] = {
       sourceRunId,

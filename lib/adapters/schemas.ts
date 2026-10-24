@@ -67,8 +67,13 @@ export const McaOutput = withEmptyPage({
     .nullable(),
 });
 
-// matchConfidence is set by the normaliser from state/city/director overlap
+// matchConfidence is set by the normaliser from state/city/director overlap;
+// partyName and partyDetails are the party text as shown, used only to compute it
 const matchConfidence = z.number().min(0).max(1).optional();
+const partyFields = {
+  partyName: z.string().nullish(),
+  partyDetails: z.string().nullish(),
+};
 
 export const LegalOutput = withEmptyPage({
   searchedNames: z.array(z.string()),
@@ -82,6 +87,7 @@ export const LegalOutput = withEmptyPage({
       status: z.enum(["Pending", "Disposed", "Unknown"]),
       summary: z.string(),
       url: z.string(),
+      ...partyFields,
       matchConfidence,
     }),
   ),
@@ -92,6 +98,7 @@ export const LegalOutput = withEmptyPage({
       date,
       summary: z.string(),
       url: z.string(),
+      ...partyFields,
       matchConfidence,
     }),
   ),

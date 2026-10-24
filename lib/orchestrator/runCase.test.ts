@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as registry from "@/lib/adapters/registry";
 import { db } from "@/lib/db/client";
-import { cases, sourceRuns } from "@/lib/db/schema";
+import { cases, sourceRuns, subjects } from "@/lib/db/schema";
 import { createTestCase, hasDatabase } from "@/lib/testing/db";
 import { listEventsAfter } from "./events";
 import { runCase } from "./runCase";
@@ -82,6 +82,57 @@ describe.skipIf(!hasDatabase)("runCase", () => {
     expect(after).toHaveLength(2);
     expect(after.find((r) => r.adapter === "news")?.id).toBe(newsBefore?.id);
     expect(after.find((r) => r.adapter === "gst")?.status).toBe("succeeded");
+  });
+
+  it("stores directors found by the mca adapter on the subject", async () => {
+    const real = registry.getAdapter;
+    vi.spyOn(registry, "getAdapter").mockImplementation((id, mode, replay) =>
+      id === "mca"
+        ? {
+            ...real(id, mode, replay),
+            run: async () => ({
+              status: "succeeded" as const,
+              isReplay: false,
+              normalized: {
+                status: "ok",
+                cin: null,
+                companyName: null,
+                companyStatus: "Active",
+                incorporationDate: null,
+                category: null,
+                companyClass: null,
+                authorizedCapital: null,
+                paidUpCapital: null,
+                registeredAddress: null,
+                lastAgmDate: null,
+                lastBalanceSheetDate: null,
+                charges: null,
+                directors: [
+                  {
+                    din: "01234567",
+                    name: "Anil Kumar",
+                    appointmentDate: null,
+                    disqualified: false,
+                  },
+                ],
+              },
+            }),
+          }
+        : real(id, mode, replay),
+    );
+    const caseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["mca"] })
+      .where(eq(cases.id, caseId));
+    await runCase(caseId, options);
+
+    const [row] = await db()
+      .select({ directors: subjects.directors })
+      .from(cases)
+      .innerJoin(subjects, eq(cases.subjectId, subjects.id))
+      .where(eq(cases.id, caseId));
+    expect(row?.directors).toEqual([{ din: "01234567", name: "Anil Kumar" }]);
   });
 
   it("marks the case failed when no source returns data", async () => {

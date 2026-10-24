@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** M4 (MCA and Legal adapters, BIZ-02/03 inputs) on `feat/mca-legal`; when keys exist, put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
+- **Next up (A):** M5 (monitor, watch/alert routes, simulate-change) on `feat/monitor`; when keys exist, put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
 - **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
 
 ## Requests for B
@@ -27,6 +27,9 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - `GET /api/cases/:id/export?format=json` downloads the same shape as `GET /api/cases/:id` plus `generatedAt`.
 - `narrative.source` is `"llm"` or `"template"`; the template is used when the model is unconfigured, fails, or breaks the FR-7 checks.
 
+- Legal items now carry `matchConfidence` (0.4 base, +0.3 state, +0.2 city, +0.3 director; a different party name caps it at 0.4). Items below 0.7 must be info-only "possible match". MCA output has `registeredAddress` and GST output `principalPlace` for BIZ-03; BIZ-02 can compare `legalName`/`companyName`/`enterpriseName`.
+- MCA directors are saved on the subject after a successful run, but news/legal in the same run start in parallel, so they only benefit on the next run or rerun.
+
 ## Requests for A
 
 - 
@@ -39,7 +42,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | M1 Demo-mode vertical slice | A part done on `feat/orchestrator` (PR not opened: no `gh`) | Adapters, replay, orchestrator, cases/SSE/demo routes verified in demo mode against a local DB. Scoring is a temporary stub, so no score yet. B part (identifiers, scoring, UI) not started |
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
-| M4 MCA + Legal | not started | |
+| M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
 | M5 Monitoring | not started | |
 | M6 Polish + resilience | not started | |
 | M7 Demo readiness | not started | |
@@ -73,6 +76,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 Narrative validation rejects unknown finding ids, years or rupee amounts not present in the findings, summaries over 120 words, and approve/reject wording; any failure falls back to the template.
 - 2026-10-24 `source_runs.evidence_url` added so reruns (and later the monitor) can rebuild evidence from stored runs.
 - 2026-10-24 Reruns bypass the source cache, rerun by default only failed/timeout/captcha_blocked sources, and refuse while a case is running (409).
+- 2026-10-24 Legal runs two agents (eCourts case search and IBBI public announcements) and is only `succeeded`/`not_found` if both were reached; a block or error on either is reported as that status so a blocked source never reads as "no cases". NCLT cause lists are not covered yet.
+- 2026-10-24 Legal items gain optional `partyName`/`partyDetails` (as shown on the page) so match confidence can be computed; they are not used for scoring.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 
 ## Blocked / questions for humans

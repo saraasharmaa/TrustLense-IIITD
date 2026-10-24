@@ -32,7 +32,9 @@ const okPage = {
   returns: [],
 };
 
-beforeEach(() => runAgent.mockReset());
+beforeEach(() => {
+  runAgent.mockReset();
+});
 
 describe("gstAdapter", () => {
   it("asks the agent for the GSTIN with the shared safety rules and returns a succeeded result", async () => {
