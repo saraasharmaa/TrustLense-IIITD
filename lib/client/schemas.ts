@@ -123,3 +123,6 @@ export const RecentCases = z.object({
     }),
   ),
 });
+
+export const SimulatedChange = z.object({ caseId: z.string(), alertId: z.string() });
+export const Watched = z.object({ watchId: z.string() });

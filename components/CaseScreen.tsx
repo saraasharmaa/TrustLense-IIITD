@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SourcesPanel } from "@/components/SourcesPanel";
 import { SummaryCard } from "@/components/SummaryCard";
+import { WatchButton } from "@/components/WatchButton";
 import { useCase } from "@/lib/client/use-case";
 
 export function CaseScreen({ caseId }: { caseId: string }) {
@@ -42,6 +43,13 @@ export function CaseScreen({ caseId }: { caseId: string }) {
   return (
     <div className="space-y-6">
       <CaseHeader view={view} />
+      {reported && (
+        <WatchButton
+          caseId={caseId}
+          watching={Boolean(view.watch?.active)}
+          onWatched={() => void reload()}
+        />
+      )}
       {view.status === "failed" && (
         <Card role="alert" className="border-red-300 bg-red-50 text-red-800">
           No source returned data, so there is no score for this check.
