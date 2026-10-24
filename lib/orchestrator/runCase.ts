@@ -5,11 +5,12 @@ import { ADAPTER_ORDER, getAdapter, hasRequiredInputs } from "@/lib/adapters/reg
 import type { ReplayOptions } from "@/lib/adapters/replay";
 import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
 import { env } from "@/lib/env";
+import { evaluate, score } from "@/lib/scoring";
 import { buildNarrative } from "@/lib/llm/narrative";
 import type { AdapterId, SourceStatus } from "@/lib/types";
 import { emitEvent } from "./events";
 import { runAdapter, type AttemptedResult } from "./retry";
-import { evaluate, score } from "./temp-scoring-stub";
+
 import {
   clearForRerun,
   createSourceRun,
@@ -261,7 +262,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   for (const finding of findings) await emitEvent(caseId, "finding.created", finding);
 
   const result = score(findings, outcomes);
-  if (result) await emitEvent(caseId, "score.computed", result);
+  await emitEvent(caseId, "score.computed", result);
 
   const narrative = await buildNarrative(findings, result);
   await emitEvent(caseId, "narrative.ready", narrative);
