@@ -54,6 +54,36 @@ describe.skipIf(!hasDatabase)("runCase", () => {
     expect(runs.find((r) => r.adapter === "news")?.status).toBe("succeeded");
   });
 
+  it("reruns only the failed source in place and keeps the other run", async () => {
+    const real = registry.getAdapter;
+    const spy = vi.spyOn(registry, "getAdapter").mockImplementation((id, mode, replay) =>
+      id === "gst"
+        ? {
+            ...real(id, mode, replay),
+            run: async () => Promise.reject(new Error("forced failure")),
+          }
+        : real(id, mode, replay),
+    );
+    const caseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["gst", "news"] })
+      .where(eq(cases.id, caseId));
+    await runCase(caseId, options);
+    const before = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
+    const newsBefore = before.find((r) => r.adapter === "news");
+
+    spy.mockRestore();
+    await runCase(caseId, { ...options, only: ["gst"] });
+
+    const [row] = await db().select().from(cases).where(eq(cases.id, caseId));
+    expect(row?.status).toBe("completed");
+    const after = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
+    expect(after).toHaveLength(2);
+    expect(after.find((r) => r.adapter === "news")?.id).toBe(newsBefore?.id);
+    expect(after.find((r) => r.adapter === "gst")?.status).toBe("succeeded");
+  });
+
   it("marks the case failed when no source returns data", async () => {
     const caseId = await createTestCase("live", `L${Date.now()}`);
     await runCase(caseId, options);
