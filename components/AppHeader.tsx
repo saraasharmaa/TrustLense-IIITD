@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertBell } from "@/components/AlertBell";
 
 export function AppHeader() {
   return (
@@ -14,6 +15,7 @@ export function AppHeader() {
           <Link href="/watchlist" className="hover:underline">
             Watchlist
           </Link>
+          <AlertBell />
         </nav>
       </div>
     </header>
