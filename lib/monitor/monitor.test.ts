@@ -1,73 +1,18 @@
 import { eq } from "drizzle-orm";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { ADAPTER_ORDER } from "@/lib/adapters/registry";
 import { db } from "@/lib/db/client";
 import { alerts, cases, watches } from "@/lib/db/schema";
 import { runCase } from "@/lib/orchestrator/runCase";
 import { createTestCase, hasDatabase } from "@/lib/testing/db";
 import { runWatch } from "./monitor";
-import type { Finding, ScoreResult } from "@/lib/types";
-
-// Stand-in scoring until B's engine is wired: only the GST suspension rule, enough to exercise the diff
-vi.mock("@/lib/orchestrator/temp-scoring-stub", () => ({
-  evaluate: (
-    outcomes: Record<
-      string,
-      {
-        normalized?: { registrationStatus?: string };
-        sourceRunId: string;
-        retrievedAt: string;
-        isReplay: boolean;
-      }
-    >,
-  ) => {
-    const gst = outcomes.gst;
-    if (!/suspended/i.test(gst?.normalized?.registrationStatus ?? "")) return [];
-    const finding: Finding = {
-      id: "x",
-      ruleId: "GST-01",
-      category: "STATUTORY",
-      severity: "critical",
-      title: "GST registration suspended",
-      detail: "d",
-      penalty: 30,
-      appliedPenalty: 30,
-      hardStop: true,
-      confidence: 1,
-      fingerprint: "GST-01:33AABCS7345M1Z3",
-      evidence: [
-        {
-          sourceRunId: gst!.sourceRunId,
-          adapter: "gst",
-          url: "https://example.invalid/r",
-          retrievedAt: gst!.retrievedAt,
-          excerpt: "Suspended",
-          isReplay: gst!.isReplay,
-        },
-      ],
-    };
-    return [finding];
-  },
-  score: (findings: Finding[]): ScoreResult => ({
-    score: findings.length ? 38 : 66,
-    grade: findings.length ? "D" : "C",
-    recommendation: "r",
-    hardStops: findings.map((f) => f.title),
-    coverage: 1,
-    isProvisional: false,
-    categoryBreakdown: [],
-    rulesVersion: "1.0.0",
-  }),
-}));
 
 const options = { replay: { delayMs: [0, 0] as [number, number] }, backoffMs: 1 };
 
-describe.skipIf(!hasDatabase)("runWatch", () => {
+describe.skipIf(!hasDatabase)("runWatch", { timeout: 20_000 }, () => {
   async function watchedBaseline() {
     const caseId = await createTestCase("demo", "33AABCS7345M1Z3");
-    await db()
-      .update(cases)
-      .set({ requestedSources: ["gst", "news", "mca"] })
-      .where(eq(cases.id, caseId));
+    await db().update(cases).set({ requestedSources: ADAPTER_ORDER }).where(eq(cases.id, caseId));
     await runCase(caseId, options);
     const [base] = await db().select().from(cases).where(eq(cases.id, caseId));
     const [watch] = await db()
@@ -82,7 +27,7 @@ describe.skipIf(!hasDatabase)("runWatch", () => {
     return { caseId, watchId: watch!.id };
   }
 
-  it("AC-10 shape: a simulated GST suspension raises a critical, simulated alert with before/after", async () => {
+  it("AC-10: a simulated GST suspension raises a critical, simulated alert C to D with before/after", async () => {
     const { caseId, watchId } = await watchedBaseline();
     const outcome = await runWatch(watchId, { simulate: true });
 
