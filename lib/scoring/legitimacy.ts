@@ -2,20 +2,13 @@ import type { SourceOutcomes } from "@/lib/adapters/types";
 import { nameSimilarity } from "@/lib/identifiers/names";
 import { stateNameInText } from "@/lib/identifiers/states";
 import type { Evidence, Finding } from "@/lib/types";
-import { makeFinding, readSource } from "./finding";
+import { makeFinding, readSource, subjectKey } from "./finding";
 
 const NAME_MATCH_THRESHOLD = 0.85;
 
 interface NamedSource {
   name: string;
   evidence: Evidence;
-}
-
-function subjectKey(outcomes: SourceOutcomes): string {
-  const gst = readSource("gst", outcomes)?.data;
-  if (gst?.status === "ok") return gst.gstin;
-  const mca = readSource("mca", outcomes)?.data;
-  return (mca?.status === "ok" && mca.cin) || "subject";
 }
 
 function udyamFinding(outcomes: SourceOutcomes, key: string): Finding[] {

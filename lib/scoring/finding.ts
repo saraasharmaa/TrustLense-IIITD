@@ -40,6 +40,14 @@ export function readSource<A extends AdapterId>(
   };
 }
 
+// Fingerprints that are not tied to a record (a case, an article) use the company as their key
+export function subjectKey(outcomes: SourceOutcomes): string {
+  const gst = readSource("gst", outcomes)?.data;
+  if (gst?.status === "ok") return gst.gstin;
+  const mca = readSource("mca", outcomes)?.data;
+  return (mca?.status === "ok" && mca.cin) || "subject";
+}
+
 export interface FindingSpec {
   ruleId: string;
   category: Category;
