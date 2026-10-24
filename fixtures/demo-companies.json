@@ -1,0 +1,741 @@
+{
+  "_note": "SYNTHETIC DEMO DATA. All companies, identifiers, cases and articles are fictional. GSTINs have valid checksums but are not registered. Never present as real.",
+  "demoToday": "2026-10-24",
+  "companies": [
+    {
+      "key": "aravali",
+      "synthetic": true,
+      "expected": {
+        "score": 97,
+        "grade": "A",
+        "recommendation": "Proceed with standard checks"
+      },
+      "subject": {
+        "legalName": "Aravali Precision Components Pvt Ltd (Demo)",
+        "tradeName": "Aravali Precision",
+        "gstin": "08AAGCA4821K1ZM",
+        "pan": "AAGCA4821K",
+        "cin": "U28999RJ2016PTC049871",
+        "udyamNumber": "UDYAM-RJ-17-0034512",
+        "stateCode": "08",
+        "entityType": "Company"
+      },
+      "snapshots": [
+        {
+          "label": "t0",
+          "adapters": {
+            "gst": {
+              "status": "ok",
+              "legalName": "Aravali Precision Components Pvt Ltd (Demo)",
+              "tradeName": "Aravali Precision",
+              "gstin": "08AAGCA4821K1ZM",
+              "registrationStatus": "Active",
+              "registrationDate": "2017-07-01",
+              "cancellationDate": null,
+              "constitution": "Private Limited Company",
+              "taxpayerType": "Regular",
+              "stateJurisdiction": "Jaipur Ward 3",
+              "centreJurisdiction": "Jaipur Commissionerate",
+              "businessActivities": [
+                "Factory / Manufacturing",
+                "Supplier of Services"
+              ],
+              "principalPlace": "Sitapura Industrial Area, Jaipur, Rajasthan",
+              "returns": [
+                {
+                  "period": "2025-10",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-11-18"
+                },
+                {
+                  "period": "2025-11",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-12-18"
+                },
+                {
+                  "period": "2025-12",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-01-18"
+                },
+                {
+                  "period": "2026-01",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-02-18"
+                },
+                {
+                  "period": "2026-02",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-03-28"
+                },
+                {
+                  "period": "2026-03",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-04-18"
+                },
+                {
+                  "period": "2026-04",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-05-18"
+                },
+                {
+                  "period": "2026-05",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-06-18"
+                },
+                {
+                  "period": "2026-06",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-07-18"
+                },
+                {
+                  "period": "2026-07",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-08-18"
+                },
+                {
+                  "period": "2026-08",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-09-18"
+                },
+                {
+                  "period": "2026-09",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-10-18"
+                }
+              ]
+            },
+            "mca": {
+              "status": "ok",
+              "cin": "U28999RJ2016PTC049871",
+              "companyName": "ARAVALI PRECISION COMPONENTS PRIVATE LIMITED",
+              "companyStatus": "Active",
+              "incorporationDate": "2016-03-14",
+              "category": "Company limited by Shares",
+              "companyClass": "Private",
+              "authorizedCapital": 10000000,
+              "paidUpCapital": 6500000,
+              "registeredAddress": "Sitapura Industrial Area, Jaipur, Rajasthan 302022",
+              "lastAgmDate": "2025-09-26",
+              "lastBalanceSheetDate": "2025-03-31",
+              "directors": [
+                {
+                  "din": "07000011",
+                  "name": "Rakesh Meena",
+                  "appointmentDate": "2016-03-14",
+                  "disqualified": false
+                },
+                {
+                  "din": "07000012",
+                  "name": "Sunita Meena",
+                  "appointmentDate": "2016-03-14",
+                  "disqualified": false
+                }
+              ],
+              "charges": [
+                {
+                  "chargeHolder": "Demo Bank Ltd",
+                  "amount": 15000000,
+                  "creationDate": "2022-06-10",
+                  "status": "Open"
+                }
+              ]
+            },
+            "legal": {
+              "status": "ok",
+              "searchedNames": [
+                "Aravali Precision Components Pvt Ltd (Demo)"
+              ],
+              "cases": [
+                {
+                  "forum": "eCourts",
+                  "caseNumber": "CS/412/2025",
+                  "caseType": "Civil - Commercial",
+                  "filingDate": "2025-05-12",
+                  "role": "Petitioner",
+                  "status": "Pending",
+                  "summary": "Recovery suit filed by the company against a customer",
+                  "url": "https://example.invalid/demo/case/1"
+                }
+              ],
+              "insolvencyNotices": []
+            },
+            "udyam": {
+              "status": "ok",
+              "udyamNumber": "UDYAM-RJ-17-0034512",
+              "enterpriseName": "ARAVALI PRECISION COMPONENTS PVT LTD",
+              "enterpriseType": "Small",
+              "majorActivity": "Manufacturing",
+              "registrationDate": "2020-09-01",
+              "state": "Rajasthan",
+              "nicCodes": [
+                "28999"
+              ]
+            },
+            "news": {
+              "status": "ok",
+              "articles": [
+                {
+                  "title": "Jaipur auto-component makers eye export orders (Demo)",
+                  "url": "https://example.invalid/demo/news/1",
+                  "publishedDate": "2026-08-02",
+                  "source": "Demo Business Daily",
+                  "snippet": "Aravali Precision expands CNC capacity.",
+                  "category": "positive_growth",
+                  "severity": "none",
+                  "entityMatchConfidence": 0.9
+                }
+              ]
+            },
+            "regulatory": {
+              "status": "ok",
+              "matches": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "sunrise",
+      "synthetic": true,
+      "expected": {
+        "score": 66,
+        "grade": "C",
+        "recommendation": "Manual review required"
+      },
+      "expectedAfterChange": {
+        "score": 38,
+        "grade": "D",
+        "note": "GST suspended -> hard stop"
+      },
+      "subject": {
+        "legalName": "Sunrise Textiles Pvt Ltd (Demo)",
+        "tradeName": "Sunrise Textiles",
+        "gstin": "33AABCS7345M1Z3",
+        "pan": "AABCS7345M",
+        "cin": "U17111TN2012PTC084430",
+        "udyamNumber": "UDYAM-TN-28-0071120",
+        "stateCode": "33",
+        "entityType": "Company"
+      },
+      "snapshots": [
+        {
+          "label": "t0",
+          "adapters": {
+            "gst": {
+              "status": "ok",
+              "legalName": "Sunrise Textiles Pvt Ltd (Demo)",
+              "tradeName": "Sunrise Textiles",
+              "gstin": "33AABCS7345M1Z3",
+              "registrationStatus": "Active",
+              "registrationDate": "2013-02-10",
+              "cancellationDate": null,
+              "constitution": "Private Limited Company",
+              "taxpayerType": "Regular",
+              "stateJurisdiction": "Tiruppur North",
+              "centreJurisdiction": "Coimbatore Commissionerate",
+              "businessActivities": [
+                "Factory / Manufacturing",
+                "Wholesale Business"
+              ],
+              "principalPlace": "Avinashi Road, Tiruppur, Tamil Nadu",
+              "returns": [
+                {
+                  "period": "2025-10",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-11-18"
+                },
+                {
+                  "period": "2025-11",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-12-18"
+                },
+                {
+                  "period": "2025-12",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-01-18"
+                },
+                {
+                  "period": "2026-01",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-02",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-03-18"
+                },
+                {
+                  "period": "2026-03",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-04-18"
+                },
+                {
+                  "period": "2026-04",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-05",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-06-18"
+                },
+                {
+                  "period": "2026-06",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-07",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-08-18"
+                },
+                {
+                  "period": "2026-08",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-09",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-10-18"
+                }
+              ]
+            },
+            "mca": {
+              "status": "ok",
+              "cin": "U17111TN2012PTC084430",
+              "companyName": "SUNRISE TEXTILES PRIVATE LIMITED",
+              "companyStatus": "Active",
+              "incorporationDate": "2012-11-05",
+              "category": "Company limited by Shares",
+              "companyClass": "Private",
+              "authorizedCapital": 5000000,
+              "paidUpCapital": 2500000,
+              "registeredAddress": "Avinashi Road, Tiruppur, Tamil Nadu 641602",
+              "lastAgmDate": "2024-09-30",
+              "lastBalanceSheetDate": "2024-03-31",
+              "directors": [
+                {
+                  "din": "06000021",
+                  "name": "Karthik Subramanian",
+                  "appointmentDate": "2012-11-05",
+                  "disqualified": false
+                }
+              ],
+              "charges": [
+                {
+                  "chargeHolder": "Demo Cooperative Bank",
+                  "amount": 8000000,
+                  "creationDate": "2019-01-15",
+                  "status": "Open"
+                }
+              ]
+            },
+            "legal": {
+              "status": "ok",
+              "searchedNames": [
+                "Sunrise Textiles Pvt Ltd (Demo)",
+                "Sunrise Textiles"
+              ],
+              "cases": [
+                {
+                  "forum": "eCourts",
+                  "caseNumber": "CC/1187/2025",
+                  "caseType": "Cheque dishonour - Sec 138 NI Act",
+                  "filingDate": "2025-11-03",
+                  "role": "Respondent",
+                  "status": "Pending",
+                  "summary": "Complaint by a yarn supplier over a dishonoured cheque",
+                  "url": "https://example.invalid/demo/case/2"
+                },
+                {
+                  "forum": "eCourts",
+                  "caseNumber": "CS/233/2026",
+                  "caseType": "Civil - Recovery",
+                  "filingDate": "2026-02-18",
+                  "role": "Respondent",
+                  "status": "Pending",
+                  "summary": "Recovery suit by a dye supplier",
+                  "url": "https://example.invalid/demo/case/3"
+                }
+              ],
+              "insolvencyNotices": []
+            },
+            "udyam": {
+              "status": "ok",
+              "udyamNumber": "UDYAM-TN-28-0071120",
+              "enterpriseName": "SUNRISE TEXTILES PRIVATE LIMITED",
+              "enterpriseType": "Small",
+              "majorActivity": "Manufacturing",
+              "registrationDate": "2021-01-12",
+              "state": "Tamil Nadu",
+              "nicCodes": [
+                "13111"
+              ]
+            },
+            "news": {
+              "status": "ok",
+              "articles": [
+                {
+                  "title": "Tiruppur unit faces worker unrest over delayed wages (Demo)",
+                  "url": "https://example.invalid/demo/news/2",
+                  "publishedDate": "2026-06-14",
+                  "source": "Demo Regional Times",
+                  "snippet": "Workers at Sunrise Textiles protested over delayed wages.",
+                  "category": "labour_dispute",
+                  "severity": "medium",
+                  "entityMatchConfidence": 0.85
+                }
+              ]
+            },
+            "regulatory": {
+              "status": "ok",
+              "matches": []
+            }
+          }
+        },
+        {
+          "label": "t1",
+          "note": "Simulated deterioration for monitoring demo",
+          "adapters": {
+            "gst": {
+              "status": "ok",
+              "legalName": "Sunrise Textiles Pvt Ltd (Demo)",
+              "tradeName": "Sunrise Textiles",
+              "gstin": "33AABCS7345M1Z3",
+              "registrationStatus": "Suspended",
+              "registrationDate": "2013-02-10",
+              "cancellationDate": null,
+              "constitution": "Private Limited Company",
+              "taxpayerType": "Regular",
+              "stateJurisdiction": "Tiruppur North",
+              "centreJurisdiction": "Coimbatore Commissionerate",
+              "businessActivities": [
+                "Factory / Manufacturing",
+                "Wholesale Business"
+              ],
+              "principalPlace": "Avinashi Road, Tiruppur, Tamil Nadu",
+              "returns": [
+                {
+                  "period": "2025-10",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-11-18"
+                },
+                {
+                  "period": "2025-11",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-12-18"
+                },
+                {
+                  "period": "2025-12",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-01-18"
+                },
+                {
+                  "period": "2026-01",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-02",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-03-18"
+                },
+                {
+                  "period": "2026-03",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-04-18"
+                },
+                {
+                  "period": "2026-04",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-05",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-06-18"
+                },
+                {
+                  "period": "2026-06",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-07",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-08-18"
+                },
+                {
+                  "period": "2026-08",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-09",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                }
+              ]
+            },
+            "news": {
+              "status": "ok",
+              "articles": [
+                {
+                  "title": "Tiruppur unit faces worker unrest over delayed wages (Demo)",
+                  "url": "https://example.invalid/demo/news/2",
+                  "publishedDate": "2026-06-14",
+                  "source": "Demo Regional Times",
+                  "snippet": "Workers at Sunrise Textiles protested over delayed wages.",
+                  "category": "labour_dispute",
+                  "severity": "medium",
+                  "entityMatchConfidence": 0.85
+                },
+                {
+                  "title": "Sunrise Textiles GST registration suspended, lenders cautious (Demo)",
+                  "url": "https://example.invalid/demo/news/3",
+                  "publishedDate": "2026-10-20",
+                  "source": "Demo Business Daily",
+                  "snippet": "Tax authorities suspended the unit's GST registration.",
+                  "category": "regulatory_action",
+                  "severity": "high",
+                  "entityMatchConfidence": 0.9
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "key": "kaveri",
+      "synthetic": true,
+      "expected": {
+        "score": 9,
+        "grade": "D",
+        "recommendation": "Escalate \u2013 high risk (hard stop: GST registration cancelled; Insolvency proceedings)"
+      },
+      "subject": {
+        "legalName": "Kaveri Agro Traders Pvt Ltd (Demo)",
+        "tradeName": "Kaveri Agro",
+        "gstin": "29AAECK9012P1ZZ",
+        "pan": "AAECK9012P",
+        "cin": "U51909KA2018PTC112245",
+        "udyamNumber": null,
+        "stateCode": "29",
+        "entityType": "Company"
+      },
+      "snapshots": [
+        {
+          "label": "t0",
+          "adapters": {
+            "gst": {
+              "status": "ok",
+              "legalName": "Kaveri Agro Traders Pvt Ltd (Demo)",
+              "tradeName": "Kaveri Agro",
+              "gstin": "29AAECK9012P1ZZ",
+              "registrationStatus": "Cancelled",
+              "registrationDate": "2018-09-01",
+              "cancellationDate": "2026-03-31",
+              "constitution": "Private Limited Company",
+              "taxpayerType": "Regular",
+              "stateJurisdiction": "Mysuru Circle",
+              "centreJurisdiction": "Mysuru Commissionerate",
+              "businessActivities": [
+                "Wholesale Business"
+              ],
+              "principalPlace": "APMC Yard, Mysuru, Karnataka",
+              "returns": [
+                {
+                  "period": "2025-10",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-11-18"
+                },
+                {
+                  "period": "2025-11",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2025-12-18"
+                },
+                {
+                  "period": "2025-12",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-01-18"
+                },
+                {
+                  "period": "2026-01",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-02-18"
+                },
+                {
+                  "period": "2026-02",
+                  "form": "GSTR-3B",
+                  "status": "Filed",
+                  "filedDate": "2026-03-18"
+                },
+                {
+                  "period": "2026-03",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-04",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-05",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-06",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-07",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-08",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                },
+                {
+                  "period": "2026-09",
+                  "form": "GSTR-3B",
+                  "status": "Not Filed",
+                  "filedDate": null
+                }
+              ]
+            },
+            "mca": {
+              "status": "ok",
+              "cin": "U51909KA2018PTC112245",
+              "companyName": "KAVERI AGRO TRADERS PRIVATE LIMITED",
+              "companyStatus": "Active",
+              "incorporationDate": "2018-07-20",
+              "category": "Company limited by Shares",
+              "companyClass": "Private",
+              "authorizedCapital": 1000000,
+              "paidUpCapital": 100000,
+              "registeredAddress": "APMC Yard, Mysuru, Karnataka 570001",
+              "lastAgmDate": "2023-09-30",
+              "lastBalanceSheetDate": "2023-03-31",
+              "directors": [
+                {
+                  "din": "08000031",
+                  "name": "Mahesh Gowda",
+                  "appointmentDate": "2018-07-20",
+                  "disqualified": true
+                },
+                {
+                  "din": "08000032",
+                  "name": "Latha Gowda",
+                  "appointmentDate": "2018-07-20",
+                  "disqualified": false
+                }
+              ],
+              "charges": null
+            },
+            "legal": {
+              "status": "ok",
+              "searchedNames": [
+                "Kaveri Agro Traders Pvt Ltd (Demo)"
+              ],
+              "cases": [],
+              "insolvencyNotices": [
+                {
+                  "source": "NCLT",
+                  "noticeType": "CIRP application admitted",
+                  "date": "2026-07-09",
+                  "summary": "Operational creditor petition admitted; insolvency resolution process initiated",
+                  "url": "https://example.invalid/demo/ibbi/1"
+                }
+              ]
+            },
+            "udyam": {
+              "status": "not_found"
+            },
+            "news": {
+              "status": "ok",
+              "articles": [
+                {
+                  "title": "Mysuru agro trader accused of defrauding farmers (Demo)",
+                  "url": "https://example.invalid/demo/news/4",
+                  "publishedDate": "2026-05-22",
+                  "source": "Demo Karnataka Herald",
+                  "snippet": "Farmers allege non-payment by Kaveri Agro Traders.",
+                  "category": "fraud",
+                  "severity": "high",
+                  "entityMatchConfidence": 0.88
+                }
+              ]
+            },
+            "regulatory": {
+              "status": "ok",
+              "matches": [
+                {
+                  "list": "MCA_DISQUALIFIED_DIRECTORS",
+                  "matchedName": "Mahesh Gowda",
+                  "matchType": "director",
+                  "confidence": 0.9,
+                  "date": "2025-11-01",
+                  "summary": "Director disqualified under Section 164(2)",
+                  "url": "https://example.invalid/demo/mca/1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
