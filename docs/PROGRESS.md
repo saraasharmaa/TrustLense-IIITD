@@ -46,7 +46,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
 | M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
 | M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is covered by a test with stand-in scoring; with the real engine still unwired, `simulate-change` returns 409 "no alert" because no score exists |
-| M6 Polish + resilience | not started | |
+| M6 Polish + resilience | A part done on `feat/polish` (rate limit, debug page, `demo:check`); a11y, states, copy, README are B's | `npm run demo:check` currently fails on score checks because B's scoring is not wired yet |
 | M7 Demo readiness | not started | |
 
 ## Spike results (fill from docs/06 §7)
@@ -82,6 +82,9 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 Legal items gain optional `partyName`/`partyDetails` (as shown on the page) so match confidence can be computed; they are not used for scoring.
 - 2026-10-24 Monitoring carries clean results (succeeded/not_found) over from the previous case as `carried_forward` and re-checks only the watch's adapters (default gst, news); monitor runs skip the source cache.
 - 2026-10-24 `simulate-change` replays fixture snapshot `t1` in demo mode against the watch's last case; it returns 409 rather than inventing an alert when nothing changed or no score exists.
+- 2026-10-24 Rate limit is in memory, 10 case creations per minute per `x-forwarded-for` IP (or one shared bucket locally), answering 429 `rate_limited`.
+- 2026-10-24 `/debug/cases/[id]` is a plain server page, 404 in production builds, showing raw runs, steps, errors, credits and events.
+- 2026-10-24 `demo:check` runs in process (no server): database, each fixture in replay against its expected score/grade, and the Sunrise simulated change; it exits non-zero on any failure.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 
 ## Blocked / questions for humans
