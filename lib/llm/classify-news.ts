@@ -1,8 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { parseWith } from "@/lib/adapters/schemas";
-import { env } from "@/lib/env";
-import { AppError } from "@/lib/errors";
+import { completeJson } from "./complete";
 
 export interface NewsTarget {
   legalName: string;
@@ -50,33 +48,15 @@ If the article is about a different company with a similar name, use <0.4. Do no
 publishedDate is the publication date stated in the article text; use null if no date is shown.`;
 }
 
-// Models sometimes wrap JSON in a code fence
-function extractJson(text: string): unknown {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end < start)
-    throw new AppError("internal", "LLM reply contained no JSON object");
-  return JSON.parse(text.slice(start, end + 1));
-}
-
 export async function classifyArticle(
   target: NewsTarget,
   article: { title: string; text: string },
   signal?: AbortSignal,
 ): Promise<NewsClassification> {
-  const { ANTHROPIC_API_KEY, ANTHROPIC_MODEL } = env();
-  if (!ANTHROPIC_API_KEY)
-    throw new AppError("upstream_unavailable", "ANTHROPIC_API_KEY is not configured");
-
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const reply = await client.messages.create(
-    {
-      model: ANTHROPIC_MODEL,
-      max_tokens: 300,
-      messages: [{ role: "user", content: buildPrompt(target, article.title, article.text) }],
-    },
-    { signal },
-  );
-  const text = reply.content.map((block) => (block.type === "text" ? block.text : "")).join("");
-  return parseWith(NewsClassification, extractJson(text), "news classification");
+  const raw = await completeJson({
+    user: buildPrompt(target, article.title, article.text),
+    maxTokens: 300,
+    signal,
+  });
+  return parseWith(NewsClassification, raw, "news classification");
 }
