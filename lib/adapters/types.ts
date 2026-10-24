@@ -1,4 +1,4 @@
-import type { AdapterId } from "@/lib/types";
+import type { AdapterId, SourceStatus } from "@/lib/types";
 
 export interface AdapterContext {
   caseId: string;
@@ -42,3 +42,15 @@ export interface SourceAdapter<T> {
   tier: "agent" | "search_fetch" | "licensed_api";
   run(input: AdapterInput, ctx: AdapterContext): Promise<AdapterResult<T>>;
 }
+
+// What the scoring engine receives per adapter after a run (or carried forward by the monitor)
+export interface SourceOutcome {
+  sourceRunId: string;
+  status: SourceStatus;
+  normalized?: unknown;
+  evidenceUrl?: string;
+  retrievedAt: string;
+  isReplay: boolean;
+}
+
+export type SourceOutcomes = Partial<Record<AdapterId, SourceOutcome>>;
