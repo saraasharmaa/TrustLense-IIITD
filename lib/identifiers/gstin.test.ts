@@ -26,3 +26,20 @@ describe("validateGstin format and state", () => {
     expect(validateGstin(`${code}AABCS7345M1Z3`)).toMatchObject({ ok: false, check: "state" });
   });
 });
+
+describe("validateGstin checksum", () => {
+  it.each(["08AAGCA4821K1ZM", "33AABCS7345M1Z3", "29AAECK9012P1ZZ", "27AAPFU0939F1ZV"])(
+    "accepts %s",
+    (gstin) => {
+      expect(validateGstin(gstin)).toMatchObject({ ok: true });
+    },
+  );
+
+  it("AC-1: rejects a valid GSTIN with its last character changed", () => {
+    expect(validateGstin("33AABCS7345M1Z4")).toEqual({
+      ok: false,
+      check: "checksum",
+      message: "GSTIN checksum is invalid",
+    });
+  });
+});
