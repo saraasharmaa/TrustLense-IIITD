@@ -2,10 +2,14 @@
 
 import { AgentLanes } from "@/components/AgentLanes";
 import { CaseHeader } from "@/components/CaseHeader";
+import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { FindingsFeed } from "@/components/FindingsFeed";
+import { FindingsList } from "@/components/FindingsList";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SourcesPanel } from "@/components/SourcesPanel";
+import { SummaryCard } from "@/components/SummaryCard";
 import { useCase } from "@/lib/client/use-case";
 
 export function CaseScreen({ caseId }: { caseId: string }) {
@@ -34,6 +38,7 @@ export function CaseScreen({ caseId }: { caseId: string }) {
 
   const { view, progress } = state;
   const done = view.status === "completed" || view.status === "partial" || view.status === "failed";
+  const reported = done && view.score !== null;
   return (
     <div className="space-y-6">
       <CaseHeader view={view} />
@@ -49,8 +54,19 @@ export function CaseScreen({ caseId }: { caseId: string }) {
       )}
       <div className="grid gap-6 lg:grid-cols-2">
         <AgentLanes runs={view.sourceRuns} progress={progress} caseDone={done} />
-        <FindingsFeed findings={view.findings} running={!done} />
+        {reported ? (
+          <CategoryBreakdown rows={view.categoryBreakdown} />
+        ) : (
+          <FindingsFeed findings={view.findings} running={!done} />
+        )}
       </div>
+      {reported && (
+        <>
+          <SummaryCard narrative={view.narrative} />
+          <FindingsList findings={view.findings} />
+          <SourcesPanel runs={view.sourceRuns} />
+        </>
+      )}
     </div>
   );
 }
