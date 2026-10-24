@@ -56,16 +56,14 @@ describe.skipIf(!hasDatabase)("runCase", () => {
 
   it("reruns only the failed source in place and keeps the other run", async () => {
     const real = registry.getAdapter;
-    const spy = vi
-      .spyOn(registry, "getAdapter")
-      .mockImplementation((id, mode, replay) =>
-        id === "gst"
-          ? {
-              ...real(id, mode, replay),
-              run: async () => Promise.reject(new Error("forced failure")),
-            }
-          : real(id, mode, replay),
-      );
+    const spy = vi.spyOn(registry, "getAdapter").mockImplementation((id, mode, replay) =>
+      id === "gst"
+        ? {
+            ...real(id, mode, replay),
+            run: async () => Promise.reject(new Error("forced failure")),
+          }
+        : real(id, mode, replay),
+    );
     const caseId = await createTestCase("demo", SUNRISE);
     await db()
       .update(cases)
