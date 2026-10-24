@@ -7,15 +7,19 @@ vi.mock("@anthropic-ai/sdk", () => ({
     messages = { create: anthropicCreate };
   },
 }));
+const openaiOptions = vi.hoisted(() => vi.fn());
 vi.mock("openai", () => ({
   default: class {
     chat = { completions: { create: openaiCreate } };
+    constructor(options: unknown) {
+      openaiOptions(options);
+    }
   },
 }));
 
 async function load(env: Record<string, string>) {
   vi.stubEnv("DATABASE_URL", "postgres://x");
-  for (const key of ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "LLM_PROVIDER"])
+  for (const key of ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "LLM_PROVIDER"])
     vi.stubEnv(key, env[key] ?? "");
   vi.resetModules();
   return import("./complete");
@@ -24,6 +28,7 @@ async function load(env: Record<string, string>) {
 beforeEach(() => {
   anthropicCreate.mockReset();
   openaiCreate.mockReset();
+  openaiOptions.mockReset();
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -48,6 +53,15 @@ describe("llmProvider", () => {
     ).toBeNull();
   });
 
+  it("uses gemini when it is the only key, and honours LLM_PROVIDER=gemini", async () => {
+    expect((await load({ GEMINI_API_KEY: "g" })).llmProvider()).toBe("gemini");
+    expect(
+      (
+        await load({ OPENAI_API_KEY: "o", GEMINI_API_KEY: "g", LLM_PROVIDER: "gemini" })
+      ).llmProvider(),
+    ).toBe("gemini");
+  });
+
   it("is null with no keys", async () => {
     expect((await load({})).llmProvider()).toBeNull();
   });
@@ -64,6 +78,16 @@ describe("completeJson", () => {
     expect(args.response_format).toEqual({ type: "json_object" });
     expect(args.messages.map((m: { role: string }) => m.role)).toEqual(["system", "user"]);
     expect(anthropicCreate).not.toHaveBeenCalled();
+  });
+
+  it("calls gemini through the openai-compatible endpoint with its own key", async () => {
+    openaiCreate.mockResolvedValue({ choices: [{ message: { content: '{"c":3}' } }] });
+    const { completeJson } = await load({ GEMINI_API_KEY: "g" });
+    expect(await completeJson({ user: "u", maxTokens: 50 })).toEqual({ c: 3 });
+    expect(openaiOptions).toHaveBeenCalledWith({
+      apiKey: "g",
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
   });
 
   it("calls anthropic when it is the provider", async () => {

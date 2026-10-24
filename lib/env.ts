@@ -13,10 +13,12 @@ const Env = z.object({
   ANTHROPIC_MODEL: z.string().default("claude-sonnet-5-5"),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
   // An empty LLM_PROVIDER= line in .env.local means "unset"
   LLM_PROVIDER: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.enum(["anthropic", "openai"]).optional(),
+    z.enum(["anthropic", "openai", "gemini"]).optional(),
   ),
   DEMO_MODE: flag,
   ALLOW_SIMULATION: flag,
