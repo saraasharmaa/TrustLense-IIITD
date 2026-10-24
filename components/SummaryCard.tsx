@@ -8,7 +8,7 @@ function Cited({ items }: { items: Narrative["keyRisks"] }) {
   return (
     <ul className="list-disc space-y-1 pl-5">
       {items.map((item) => (
-        <li key={item.text}>
+        <li key={item.findingIds.join(",") || item.text}>
           {item.text}{" "}
           {item.findingIds.map((id) => (
             <a
@@ -63,8 +63,8 @@ export function SummaryCard({ narrative }: { narrative: Narrative | null }) {
         {narrative.suggestedConditions.length > 0 && (
           <Section title="Suggested conditions">
             <ul className="list-disc space-y-1 pl-5">
-              {narrative.suggestedConditions.map((c) => (
-                <li key={c}>{c}</li>
+              {narrative.suggestedConditions.map((c, i) => (
+                <li key={`${i}-${c}`}>{c}</li>
               ))}
             </ul>
           </Section>
@@ -72,8 +72,8 @@ export function SummaryCard({ narrative }: { narrative: Narrative | null }) {
         {narrative.questionsForBorrower.length > 0 && (
           <Section title="Questions for the borrower">
             <ul className="list-disc space-y-1 pl-5">
-              {narrative.questionsForBorrower.map((q) => (
-                <li key={q}>{q}</li>
+              {narrative.questionsForBorrower.map((q, i) => (
+                <li key={`${i}-${q}`}>{q}</li>
               ))}
             </ul>
           </Section>
