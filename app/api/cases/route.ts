@@ -1,4 +1,5 @@
 import { desc, eq } from "drizzle-orm";
+import { clientIp, enforceRateLimit } from "@/lib/api/rate-limit";
 import { handle, parseBody } from "@/lib/api/route";
 import { db } from "@/lib/db/client";
 import { cases, subjects } from "@/lib/db/schema";
@@ -9,6 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export const POST = handle(async (req: Request) => {
+  enforceRateLimit(clientIp(req));
   const body = await parseBody(req, CreateCaseBody);
   const { caseId, subjectId } = await createCase(body);
   // Runs in this process after the response; progress is read back through the event log
