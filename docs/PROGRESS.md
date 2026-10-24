@@ -89,6 +89,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## Blocked / questions for humans
 
+- **M2 not verified live (agreed):** the TinyFish client, GST and News adapters are tested only with mocks. No live run has happened because `.env.local` has no `TINYFISH_API_KEY` or `ANTHROPIC_API_KEY`; the spike table above stays empty until then.
 - Tests that need Postgres skip unless `DATABASE_URL` is set. A verified them against a throwaway local database `trustlens_dev` (created with `createdb`, no `.env.local` involved). `drizzle-kit push` asks an interactive question on that database, so a new column was added with `psql`; a fresh database pushes cleanly.
 - `gh` (GitHub CLI) is not installed on this machine, so A cannot open PRs, list B's PRs or merge. `feat/scaffold` is pushed; open its PR from the GitHub link, or install and log in to `gh`.
 - `.env.local` does not exist yet, so nothing has run against Postgres.
