@@ -1,4 +1,5 @@
 import pLimit from "p-limit";
+import { withCache } from "@/lib/adapters/cache";
 import { ADAPTER_ORDER, getAdapter, hasRequiredInputs } from "@/lib/adapters/registry";
 import type { ReplayOptions } from "@/lib/adapters/replay";
 import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
@@ -21,6 +22,8 @@ import {
 export interface RunCaseOptions {
   replay?: ReplayOptions;
   backoffMs?: number;
+  // Skip the source cache for this run (the ?fresh option on the API)
+  fresh?: boolean;
 }
 
 // Progress and per-attempt events are best effort; the final events are awaited in order
@@ -69,6 +72,15 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     () => caseController.abort(new Error("Case time limit reached")),
     config.CASE_TIMEOUT_MS,
   );
+
+  // Monitoring must see current data, and replay data is never cached
+  const useCache =
+    caseRow.mode === "live" &&
+    caseRow.triggeredBy !== "monitor" &&
+    !options.fresh &&
+    config.SOURCE_CACHE_TTL_SECONDS > 0;
+  const withCacheIfAllowed = (adapter: SourceAdapter<unknown>) =>
+    useCache ? withCache(adapter, config.SOURCE_CACHE_TTL_SECONDS) : adapter;
 
   const outcomes: SourceOutcomes = {};
   const statuses: SourceStatus[] = [];
@@ -133,7 +145,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
       status: result.status,
       normalized: result.normalized,
       evidenceUrl: result.evidenceUrl,
-      retrievedAt: new Date().toISOString(),
+      retrievedAt: result.retrievedAt ?? new Date().toISOString(),
       isReplay: result.isReplay,
     };
 
@@ -175,7 +187,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
 
   await Promise.all(
     requested.map((id) => {
-      const adapter = getAdapter(id, caseRow.mode, options.replay);
+      const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
       return limit(() =>
         hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
       );

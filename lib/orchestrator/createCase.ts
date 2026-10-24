@@ -16,6 +16,7 @@ export const CreateCaseBody = z.object({
   legalName: z.string().min(1).nullish(),
   sources: z.array(AdapterId).min(1).default(ADAPTER_ORDER),
   mode: z.enum(["live", "demo"]).optional(),
+  fresh: z.boolean().default(false),
 });
 
 const WORKSPACE = "demo";

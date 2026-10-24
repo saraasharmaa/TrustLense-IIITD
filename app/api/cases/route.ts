@@ -12,7 +12,7 @@ export const POST = handle(async (req: Request) => {
   const body = await parseBody(req, CreateCaseBody);
   const { caseId, subjectId } = await createCase(body);
   // Runs in this process after the response; progress is read back through the event log
-  void runCase(caseId);
+  void runCase(caseId, { fresh: body.fresh });
   return Response.json({ caseId, subjectId, status: "queued" }, { status: 201 });
 });
 
