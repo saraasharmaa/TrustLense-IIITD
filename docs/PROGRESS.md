@@ -4,8 +4,8 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, and decide live or replay per adapter; then re-run `npm run demo:check` after each merge.
-- **Next up (B):** merge-ready: `feat/scoring` PR. Then M1 UI on `feat/ui-home` from `main`: home page with live identifier validation and demo chips, then the run view (`/cases/[id]`) with agent lanes, findings feed and score ring, built against docs/05 and the real routes.
+- **Next up (A):** add credits to the Anthropic account behind `ANTHROPIC_API_KEY`, rerun `npm run spike -- news "Reliance Industries Limited"`, then run MCA and Legal spikes; decide live or replay per adapter.
+- **Next up (B):** none assigned. The MVP UI (home, run, report, watchlist, alerts) was built by A on `feat/ui-*`; remaining polish: name search, print/export view, accessibility pass, Udyam/regulatory lanes.
 
 ## Requests for B
 
@@ -45,11 +45,11 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
-| M1 Demo-mode vertical slice | A part and B identifiers and scoring merged; real scoring wired in `feat/wire-scoring`; B UI not started | `npm run demo:check` passes: Aravali 97/A, Sunrise 66/C, Kaveri 9/D and the Sunrise simulated change raises a critical C to D alert |
+| M1 Demo-mode vertical slice | A part and B identifiers and scoring merged; real scoring wired in `feat/wire-scoring`; UI built by A (home, run, report, watchlist, alerts) | `npm run demo:check` passes: Aravali 97/A, Sunrise 66/C, Kaveri 9/D and the Sunrise simulated change raises a critical C to D alert |
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
 | M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
-| M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is asserted exactly in `lib/monitor/monitor.test.ts` with the real engine (C to D, 66 to 38, critical) |
+| M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI built by A | AC-10 is asserted exactly in `lib/monitor/monitor.test.ts` with the real engine (C to D, 66 to 38, critical) |
 | M6 Polish + resilience | A part done on `feat/polish` (rate limit, debug page, `demo:check`); a11y, states, copy, README are B's | `npm run demo:check` passes against a local database |
 | M7 Demo readiness | A part done: backend README section, `demo:check` passing locally | Live spikes and the live/replay decision per adapter are still open (no API keys); final rehearsal and the pitch are the team's |
 
@@ -89,6 +89,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 Rate limit is in memory, 10 case creations per minute per `x-forwarded-for` IP (or one shared bucket locally), answering 429 `rate_limited`.
 - 2026-10-24 `/debug/cases/[id]` is a plain server page, 404 in production builds, showing raw runs, steps, errors, credits and events.
 - 2026-10-24 `demo:check` runs in process (no server): database, each fixture in replay against its expected score/grade, and the Sunrise simulated change; it exits non-zero on any failure.
+- 2026-10-25 A built the MVP UI alone (B had not started): shadcn CLI hung, so Button/Badge/Card/Skeleton are hand-written in the shadcn style. The run page follows the SSE stream and refetches the case view on each event, so a refresh rebuilds from the server.
+- 2026-10-25 Simulating a change takes about 25 s against a remote Neon database (many sequential round trips plus replay delays); a local Postgres is much faster.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 - 2026-10-24 B: GST state codes come from the GST e-invoice master codes page (gst.gov.in). It has no code 28, so a GSTIN starting 28 is rejected although FR-1.2 says 01-38; no official source was found for legacy Andhra Pradesh 28. Pending the humans' call.
 - 2026-10-24 B: CIN state letters are NOT from an official source (MCA publishes none). An unknown code gives `stateName: null`, never a rejection.

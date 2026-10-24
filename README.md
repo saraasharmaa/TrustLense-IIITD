@@ -4,6 +4,33 @@
 
 Enter a GSTIN, CIN or company name. TinyFish web agents check GST, MCA, courts/insolvency, Udyam, regulatory lists and the open web in parallel, and produce an explainable, evidence-backed risk report. Watched companies are re-checked and alert on change.
 
+## The problem
+
+Vetting a small business in India means checking GST, MCA, courts, news and more, across portals with no clean APIs. It takes hours, differs between analysts, and goes stale the day after. TrustLens runs those checks in parallel with TinyFish web agents, turns the results into findings that each carry evidence, scores them with a transparent rule engine, and keeps watching: a change raises an alert showing what moved. It is decision support, not a lending decision.
+
+## Run the demo (replay mode)
+
+```bash
+cp .env.example .env.local      # set DATABASE_URL (Postgres); the API keys are not needed for replay
+npm ci
+npm run db:push
+npm run demo                    # http://localhost:3000
+```
+Click path: **Sunrise Textiles** chip, **Start check**, watch the lanes finish, read the report (**66 / Grade C**, findings with evidence, every replay source labelled), **Watch this company**, open **Watchlist**, **Simulate change**, and the alert shows **66/C to 38/D** with the before/after view. `npm run demo:check` runs the same path without a browser.
+
+## What is verified live and what is replay
+
+| Source | Status |
+|---|---|
+| All demo companies (Aravali, Sunrise, Kaveri) | Replay of synthetic fixtures, labelled "Replay / demo data" everywhere |
+| TinyFish Agent, Search, Fetch | Reached with a real key (2026-10-24) |
+| GST (live) | The portal shows an image CAPTCHA, so a live run reports `captcha_blocked`; there is no bypass |
+| News (live) | Search and Fetch work; classification was **not** verified end to end (the Anthropic account had no credit) |
+| MCA, Legal | Built and unit-tested against a mocked client; **not** run live |
+| Udyam, Regulatory | Replay only; no live adapter |
+
+Details and the spike table are in `docs/PROGRESS.md`.
+
 ## What is in this pack
 
 | File | Purpose |
@@ -26,12 +53,6 @@ Enter a GSTIN, CIN or company name. TinyFish web agents check GST, MCA, courts/i
 | `fixtures/demo-companies.json` | 3 synthetic companies + a monitoring change snapshot |
 | `fixtures/score_reference.py` | Reference scorer (run it to see expected results) |
 | `.env.example` | Environment variables |
-
-## How to use
-
-1. **Round 1 (online):** use `docs/00`, `01`, `03`, `06`, `10` to write the 8–9 slide deck. **Do not submit code** (the brief says it may cost marks).
-2. **Before the finale:** create TinyFish accounts, test portal flows manually in the TinyFish playground, fill the spike table in `docs/PROGRESS.md`, and **ask the organisers if pre-written code is allowed**.
-3. **At the finale:** unzip into an empty git repo, run `claude`, paste prompts from `docs/12-claude-code-prompts.md` one milestone at a time.
 
 ## Things to verify (flagged in the docs)
 
