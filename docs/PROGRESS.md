@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
+- **Next up (A):** M4 (MCA and Legal adapters, BIZ-02/03 inputs) on `feat/mca-legal`; when keys exist, put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
 - **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
 
 ## Requests for B
@@ -23,6 +23,10 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - `news` articles carry `publishedDate` read by the LLM from the article text (Search/Fetch return no date). It can be `null`: decide in scoring how NEWS-01/02 treat an undated article (suggest: info finding, no penalty, because the 24-month rule can't be checked).
 - Live adapters never set `matchConfidence` on legal items yet (M4).
 
+- `POST /api/cases/:id/rerun` returns `202 {caseId, sources}` (no `version`, per the in-place rerun decision). With no body it reruns every failed, timed-out or CAPTCHA-blocked source; it returns 409 while the case is running. The stream then continues with new events on the same case; reconnect with the last seen `Last-Event-ID`.
+- `GET /api/cases/:id/export?format=json` downloads the same shape as `GET /api/cases/:id` plus `generatedAt`.
+- `narrative.source` is `"llm"` or `"template"`; the template is used when the model is unconfigured, fails, or breaks the FR-7 checks.
+
 ## Requests for A
 
 - 
@@ -34,7 +38,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
 | M1 Demo-mode vertical slice | A part done on `feat/orchestrator` (PR not opened: no `gh`) | Adapters, replay, orchestrator, cases/SSE/demo routes verified in demo mode against a local DB. Scoring is a temporary stub, so no score yet. B part (identifiers, scoring, UI) not started |
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
-| M3 Report experience | not started | |
+| M3 Report experience | A part done on `feat/report-api` (rerun, export, LLM narrative); B part (report UI) not started | Verified with replay and mocked LLM; no live keys yet |
 | M4 MCA + Legal | not started | |
 | M5 Monitoring | not started | |
 | M6 Polish + resilience | not started | |
@@ -66,6 +70,9 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 News classification also extracts `publishedDate` from the article text, because TinyFish Search and Fetch return no dates and docs/07 needs article age.
 - 2026-10-24 Source cache wraps live adapters in `runCase`; only `succeeded`/`not_found` results are cached, monitor runs and `fresh: true` skip it, and a cache hit keeps its original `retrievedAt`.
 - 2026-10-24 `DATABASE_URL` is optional at parse time so `npm run spike` works without a database; `db()` throws if it is missing.
+- 2026-10-24 Narrative validation rejects unknown finding ids, years or rupee amounts not present in the findings, summaries over 120 words, and approve/reject wording; any failure falls back to the template.
+- 2026-10-24 `source_runs.evidence_url` added so reruns (and later the monitor) can rebuild evidence from stored runs.
+- 2026-10-24 Reruns bypass the source cache, rerun by default only failed/timeout/captcha_blocked sources, and refuse while a case is running (409).
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 
 ## Blocked / questions for humans
