@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** open the PR for `feat/orchestrator`; when B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
+- **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
 - **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
 
 ## Requests for B
@@ -20,6 +20,9 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - `GET /api/cases/:id` returns `subject.stateCode` only; the state name needs B's state table. Tell A if the API should return it.
 - Replay evidence URLs look like `https://example.invalid/replay/<adapter>/<companyKey>`; `outcome.isReplay` is true for them.
 
+- `news` articles carry `publishedDate` read by the LLM from the article text (Search/Fetch return no date). It can be `null`: decide in scoring how NEWS-01/02 treat an undated article (suggest: info finding, no penalty, because the 24-month rule can't be checked).
+- Live adapters never set `matchConfidence` on legal items yet (M4).
+
 ## Requests for A
 
 - 
@@ -30,7 +33,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 |---|---|---|
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
 | M1 Demo-mode vertical slice | A part done on `feat/orchestrator` (PR not opened: no `gh`) | Adapters, replay, orchestrator, cases/SSE/demo routes verified in demo mode against a local DB. Scoring is a temporary stub, so no score yet. B part (identifiers, scoring, UI) not started |
-| M2 TinyFish live: GST + News | not started | |
+| M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | not started | |
 | M4 MCA + Legal | not started | |
 | M5 Monitoring | not started | |
@@ -41,7 +44,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 | Adapter | Reaches data? | CAPTCHA/OTP | Median latency | Credits/run | Reliability (x/5) | Tier decision |
 |---|---|---|---|---|---|---|
-| gst | | | | | | |
+| gst | not run (no key) | expected: image CAPTCHA on services.gst.gov.in/services/searchtp | | | | |
 | news | | | | | | |
 | mca | | | | | | |
 | legal | | | | | | |
@@ -60,6 +63,9 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 B owns `lib/scoring` and `lib/identifiers`; the orchestrator is built against the `evaluate`/`score` signatures in docs/07 and wired after B's branch merges.
 - 2026-10-24 `tsx` approved as a dev dependency for `db:seed` and `spike`; shadcn/ui left to B.
 - 2026-10-24 Scaffolded by hand (create-next-app refuses a non-empty repo); TypeScript pinned to 5.x, vitest to 3.x because vitest 4 failed to install with this npm.
+- 2026-10-24 News classification also extracts `publishedDate` from the article text, because TinyFish Search and Fetch return no dates and docs/07 needs article age.
+- 2026-10-24 Source cache wraps live adapters in `runCase`; only `succeeded`/`not_found` results are cached, monitor runs and `fresh: true` skip it, and a cache hit keeps its original `retrievedAt`.
+- 2026-10-24 `DATABASE_URL` is optional at parse time so `npm run spike` works without a database; `db()` throws if it is missing.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 
 ## Blocked / questions for humans
