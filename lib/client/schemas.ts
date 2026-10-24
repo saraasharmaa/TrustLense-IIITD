@@ -109,3 +109,17 @@ export const WatchItem = z.object({
 });
 export const Watches = z.object({ watches: z.array(WatchItem) });
 export type WatchItem = z.infer<typeof WatchItem>;
+
+export const RecentCases = z.object({
+  cases: z.array(
+    z.object({
+      id: z.string(),
+      status: z.string(),
+      mode: z.enum(["live", "demo"]),
+      score: z.number().nullable(),
+      grade: z.string().nullable(),
+      createdAt: z.string(),
+      subject: z.object({ legalName: z.string(), gstin: z.string().nullable() }),
+    }),
+  ),
+});
