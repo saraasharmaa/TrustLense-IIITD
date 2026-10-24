@@ -10,7 +10,7 @@ export async function createTestCase(
 ): Promise<string> {
   const [subject] = await db()
     .insert(subjects)
-    .values({ legalName: "Test Co", gstin, workspaceId: "test" })
+    .values({ legalName: "Test Co", gstin, workspaceId: crypto.randomUUID() })
     .returning({ id: subjects.id });
   const [created] = await db()
     .insert(cases)
