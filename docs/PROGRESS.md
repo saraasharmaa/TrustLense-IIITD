@@ -57,8 +57,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 | Adapter | Reaches data? | CAPTCHA/OTP | Median latency | Credits/run | Reliability (x/5) | Tier decision |
 |---|---|---|---|---|---|---|
-| gst | not run (no key) | expected: image CAPTCHA on services.gst.gov.in/services/searchtp | | | | |
-| news | | | | | | |
+| gst | no | image CAPTCHA (TinyFish: "Task blocked by CAPTCHA") | 34.5 s (1 run) | not reported by the stream; wallet read $16 before and after | 0/1 (1 run, listed company GSTIN, 2026-10-24) | Live attempt only: reports `captcha_blocked`; demo uses labelled replay |
+| news | Search and Fetch reached live data; classification not verified | none | 11.1 s until the classifier failed | Search/Fetch free tier | 0/1: the Anthropic API rejected the call ("credit balance is too low"), so the adapter correctly reported `failed` | Not decided: rerun after Anthropic credits are added |
 | mca | | | | | | |
 | legal | | | | | | |
 | udyam | | | | | | |
@@ -99,7 +99,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## Blocked / questions for humans
 
-- **M2 not verified live (agreed):** the TinyFish client, GST and News adapters are tested only with mocks. No live run has happened because `.env.local` has no `TINYFISH_API_KEY` or `ANTHROPIC_API_KEY`; the spike table above stays empty until then.
+- **Anthropic account has no credits.** The live News spike (2026-10-24) failed at classification with "credit balance is too low". Add credits to the account behind `ANTHROPIC_API_KEY`, then rerun `npm run spike -- news "Reliance Industries Limited"`. The narrative falls back to the template meanwhile.
+- **M2 partly verified live (2026-10-24):** TinyFish Agent, Search and Fetch work with the real key; GST ends in `captcha_blocked` (recorded, no bypass); News is unverified end to end (see above). Previously:  the TinyFish client, GST and News adapters are tested only with mocks. No live run has happened because `.env.local` has no `TINYFISH_API_KEY` or `ANTHROPIC_API_KEY`; the spike table above stays empty until then.
 - Tests that need Postgres skip unless `DATABASE_URL` is set. A verified them against a throwaway local database `trustlens_dev` (created with `createdb`, no `.env.local` involved). `drizzle-kit push` asks an interactive question on that database, so a new column was added with `psql`; a fresh database pushes cleanly.
 - `gh` (GitHub CLI) is not installed on this machine, so A cannot open PRs, list B's PRs or merge. `feat/scaffold` is pushed; open its PR from the GitHub link, or install and log in to `gh`.
 - `.env.local` does not exist yet, so nothing has run against Postgres.
