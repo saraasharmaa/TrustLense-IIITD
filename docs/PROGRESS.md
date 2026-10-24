@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, and decide live or replay per adapter; then M7 (README section on the backend, final `demo:check`).
+- **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, and decide live or replay per adapter; then re-run `npm run demo:check` after each merge.
 - **Next up (B):** merge-ready: `feat/scoring` PR. Then M1 UI on `feat/ui-home` from `main`: home page with live identifier validation and demo chips, then the run view (`/cases/[id]`) with agent lanes, findings feed and score ring, built against docs/05 and the real routes.
 
 ## Requests for B
@@ -51,7 +51,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | M4 MCA + Legal | A part done on `feat/mca-legal` (adapters, match confidence, directors); BIZ-02/03 rules are B's | Unit-tested with mocks; live reliability unknown until the spike |
 | M5 Monitoring | A part done on `feat/monitor` (diff, watches, alerts, scheduler, cron, simulate-change); UI is B's | AC-10 is asserted exactly in `lib/monitor/monitor.test.ts` with the real engine (C to D, 66 to 38, critical) |
 | M6 Polish + resilience | A part done on `feat/polish` (rate limit, debug page, `demo:check`); a11y, states, copy, README are B's | `npm run demo:check` passes against a local database |
-| M7 Demo readiness | not started | |
+| M7 Demo readiness | A part done: backend README section, `demo:check` passing locally | Live spikes and the live/replay decision per adapter are still open (no API keys); final rehearsal and the pitch are the team's |
 
 ## Spike results (fill from docs/06 §7)
 
