@@ -53,10 +53,10 @@ export interface FindingSpec {
   evidence: Evidence[];
 }
 
-// The orchestrator replaces the id with a UUID; the fingerprint is stable enough meanwhile
+// The orchestrator replaces the id with a UUID; two rules may share a fingerprint, so the id adds the rule
 export function makeFinding(spec: FindingSpec): Finding {
   return {
-    id: spec.fingerprint,
+    id: `${spec.ruleId}:${spec.fingerprint}`,
     ruleId: spec.ruleId,
     category: spec.category,
     severity: spec.severity,
