@@ -77,7 +77,9 @@ export const ScoreResult = z.object({
   hardStops: z.array(z.string()),
   coverage: z.number().min(0).max(1),
   isProvisional: z.boolean(),
-  categoryBreakdown: z.array(z.object({ category: Category, cap: z.number(), applied: z.number() })),
+  categoryBreakdown: z.array(
+    z.object({ category: Category, cap: z.number(), applied: z.number() }),
+  ),
   rulesVersion: z.string(),
 });
 export type ScoreResult = z.infer<typeof ScoreResult>;
