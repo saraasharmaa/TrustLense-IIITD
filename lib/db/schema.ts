@@ -14,7 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { Evidence, Narrative } from "@/lib/types";
+import type { Evidence, Narrative, ScoreResult } from "@/lib/types";
 
 const id = () => uuid("id").primaryKey().defaultRandom();
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -89,6 +89,8 @@ export const cases = pgTable(
     coverage: numeric("coverage", { precision: 4, scale: 3 }),
     isProvisional: boolean("is_provisional"),
     rulesVersion: text("rules_version"),
+    // Full result kept so the API can return hard stops and the category breakdown
+    scoreResult: jsonb("score_result").$type<ScoreResult>(),
     narrative: jsonb("narrative").$type<Narrative>(),
     parentCaseId: uuid("parent_case_id"),
     createdAt: createdAt(),
