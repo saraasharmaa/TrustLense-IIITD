@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** M1 on `feat/orchestrator` (adapters, replay wrapper, orchestrator, case routes, SSE).
+- **Next up (A):** open the PR for `feat/orchestrator`; when B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
 - **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
 
 ## Requests for B
@@ -16,6 +16,10 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - `validateGstin(input: string)` returning the derived PAN, state code, state name and entity type, or throwing `AppError("invalid_identifier", ...)`; same shape for CIN and Udyam.
 - `lib/types.ts` and `lib/db/schema.ts` are A's; ask A before editing.
 
+- The orchestrator replaces each finding's `id` with a fresh UUID after `evaluate`, so use any placeholder id.
+- `GET /api/cases/:id` returns `subject.stateCode` only; the state name needs B's state table. Tell A if the API should return it.
+- Replay evidence URLs look like `https://example.invalid/replay/<adapter>/<companyKey>`; `outcome.isReplay` is true for them.
+
 ## Requests for A
 
 - 
@@ -25,7 +29,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
-| M1 Demo-mode vertical slice | not started | |
+| M1 Demo-mode vertical slice | A part done on `feat/orchestrator` (PR not opened: no `gh`) | Adapters, replay, orchestrator, cases/SSE/demo routes verified in demo mode against a local DB. Scoring is a temporary stub, so no score yet. B part (identifiers, scoring, UI) not started |
 | M2 TinyFish live: GST + News | not started | |
 | M3 Report experience | not started | |
 | M4 MCA + Legal | not started | |
@@ -60,6 +64,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## Blocked / questions for humans
 
+- Tests that need Postgres skip unless `DATABASE_URL` is set. A verified them against a throwaway local database `trustlens_dev` (created with `createdb`, no `.env.local` involved). `drizzle-kit push` asks an interactive question on that database, so a new column was added with `psql`; a fresh database pushes cleanly.
 - `gh` (GitHub CLI) is not installed on this machine, so A cannot open PRs, list B's PRs or merge. `feat/scaffold` is pushed; open its PR from the GitHub link, or install and log in to `gh`.
 - `.env.local` does not exist yet, so nothing has run against Postgres.
 
