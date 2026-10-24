@@ -5,7 +5,7 @@ Update at the end of every milestone. Keep it short and factual.
 ## Next up
 
 - **Next up (A):** put keys in `.env.local`, run `npm run spike -- gst <GSTIN> --runs 3` and `npm run spike -- news "<name>" --runs 3`, fill the spike table, then M3. When B's scoring/identifiers land, delete `lib/orchestrator/temp-scoring-stub.ts` and wire the real code. Then M2: check https://docs.tinyfish.ai, write `lib/tinyfish/client.ts`, GST and News adapters, spike script.
-- **Next up (B):** M1 `lib/identifiers`, `lib/scoring`, home page and run view, on a `feat/*` branch from `main`.
+- **Next up (B):** merge-ready: `feat/scoring` PR. Then M1 UI on `feat/ui-home` from `main`: home page with live identifier validation and demo chips, then the run view (`/cases/[id]`) with agent lanes, findings feed and score ring, built against docs/05 and the real routes.
 
 ## Requests for B
 
@@ -25,14 +25,18 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## Requests for A
 
-- 
+- Identifier validators return `{ ok: true, value }` or `{ ok: false, check, message }` so the UI can show the failing check without catching. For routes and the orchestrator use `orThrow(validateGstin(x))` from `lib/identifiers/types.ts`; it throws `AppError("invalid_identifier", message, { check })`. `validateGstin` returns `{ gstin, pan, stateCode, stateName, entityType }`; `validateCin` and `validateUdyam` have the same shape.
+- Wire scoring with `import { evaluate, score } from "@/lib/scoring"`; the signatures are exactly the ones listed under Requests for B. `score` never returns `null`, so the stub's `ScoreResult | null` handling can go.
+- `evaluate` re-parses `outcome.normalized` with `lib/adapters/schemas.ts` and ignores an outcome that has no `evidenceUrl` (rule 2: no evidence, no finding). Coverage still counts such an outcome, so live adapters should always set `evidenceUrl` to the page they read.
+- `LegalOutput.role` only allows `Petitioner | Respondent | Other`, so LEG-02/03 count `Respondent` only; docs/07 also names Defendant and Accused. Not a problem for fixtures; tell B if the MCA/Legal adapter needs them.
+- COVERAGE findings for a source that never ran have empty `evidence`, because `Evidence.url` is required and there is no run to point at. Treat the empty list as intended for `COVERAGE-*` only.
 
 ## Status
 
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Scaffold | done (A), untested against a live DB | Next 15, schema, health route, fixtures loader. `db:push` and `db:seed` need `DATABASE_URL` in `.env.local` |
-| M1 Demo-mode vertical slice | A part done on `feat/orchestrator` (PR not opened: no `gh`) | Adapters, replay, orchestrator, cases/SSE/demo routes verified in demo mode against a local DB. Scoring is a temporary stub, so no score yet. B part (identifiers, scoring, UI) not started |
+| M1 Demo-mode vertical slice | A part merged; B identifiers merged, B scoring in PR `feat/scoring`, B UI not started | Scoring reproduces Aravali 97/A, Sunrise 66/C and 38/D, Kaveri 9/D. A still needs to delete `temp-scoring-stub.ts` and wire `@/lib/scoring` |
 | M2 TinyFish live: GST + News | code done on `feat/tinyfish`; not run live | Client, GST and News adapters, cache, spike script, all unit-tested with mocks. Live spike needs `TINYFISH_API_KEY` and `ANTHROPIC_API_KEY` in `.env.local` (file does not exist yet) |
 | M3 Report experience | not started | |
 | M4 MCA + Legal | not started | |
@@ -67,6 +71,12 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 Source cache wraps live adapters in `runCase`; only `succeeded`/`not_found` results are cached, monitor runs and `fresh: true` skip it, and a cache hit keeps its original `retrievedAt`.
 - 2026-10-24 `DATABASE_URL` is optional at parse time so `npm run spike` works without a database; `db()` throws if it is missing.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
+- 2026-10-24 B: GST state codes come from the GST e-invoice master codes page (gst.gov.in). It has no code 28, so a GSTIN starting 28 is rejected although FR-1.2 says 01-38; no official source was found for legacy Andhra Pradesh 28. Pending the humans' call.
+- 2026-10-24 B: CIN state letters are NOT from an official source (MCA publishes none). An unknown code gives `stateName: null`, never a rejection.
+- 2026-10-24 B: scoring ports `score_reference.py`, but follows docs/07 where the reference is looser and fixtures agree: GST-02/03 look at the last 12 GSTR-3B rows only, GST-02 needs at least 3 returns, and a null `companyStatus` or date is never penalised.
+- 2026-10-24 B: rules with a per-record fingerprint (LEG-01/02/04, NEWS-01/02, REG-01, MCA-03) emit one finding per record, so a new article or case raises a new alert. The rule group still counts only the highest penalty, so the other findings show `appliedPenalty` 0.
+- 2026-10-24 B: undated or older-than-24-month adverse articles become `NEWS-STALE` info findings, and low-confidence legal, news and regulatory matches become `LEG-POSSIBLE`, `NEWS-POSSIBLE` and `REG-POSSIBLE` info findings; none are scored.
+- 2026-10-24 B: BIZ-01 fires on a `not_found` Udyam outcome only; the "provided Udyam number could not be verified" case needs the input number, which `evaluate` does not receive.
 
 ## Blocked / questions for humans
 
