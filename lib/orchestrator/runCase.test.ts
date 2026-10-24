@@ -135,6 +135,38 @@ describe.skipIf(!hasDatabase)("runCase", () => {
     expect(row?.directors).toEqual([{ din: "01234567", name: "Anil Kumar" }]);
   });
 
+  it("monitoring: reruns chosen sources on a snapshot and carries the rest forward", async () => {
+    const baseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["gst", "news", "mca"] })
+      .where(eq(cases.id, baseId));
+    await runCase(baseId, options);
+    const [base] = await db().select().from(cases).where(eq(cases.id, baseId));
+
+    const [next] = await db()
+      .insert(cases)
+      .values({
+        subjectId: base!.subjectId,
+        mode: "demo",
+        triggeredBy: "simulation",
+        requestedSources: base!.requestedSources,
+      })
+      .returning({ id: cases.id });
+    await runCase(next!.id, {
+      replay: { ...options.replay, snapshot: "t1" },
+      backoffMs: 1,
+      only: ["gst", "news"],
+      carryForwardFrom: baseId,
+    });
+
+    const [row] = await db().select().from(cases).where(eq(cases.id, next!.id));
+    expect(row?.status).toBe("completed");
+    const runs = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, next!.id));
+    expect(runs.map((r) => r.adapter).sort()).toEqual(["gst", "news"]);
+    expect(JSON.stringify(runs.find((r) => r.adapter === "gst")?.normalized)).toMatch(/Suspended/i);
+  });
+
   it("marks the case failed when no source returns data", async () => {
     const caseId = await createTestCase("live", `L${Date.now()}`);
     await runCase(caseId, options);
