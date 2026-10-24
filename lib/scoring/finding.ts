@@ -61,10 +61,17 @@ export interface FindingSpec {
   evidence: Evidence[];
 }
 
-// The orchestrator replaces the id with a UUID; two rules may share a fingerprint, so the id adds the rule
+// Two rules can share a fingerprint (GST-02 and GST-03), so the id carries the rule when it is not
+// already the fingerprint's prefix. The orchestrator replaces it with a UUID anyway.
+function idFor(spec: FindingSpec): string {
+  return spec.fingerprint.startsWith(`${spec.ruleId}:`)
+    ? spec.fingerprint
+    : `${spec.ruleId}:${spec.fingerprint}`;
+}
+
 export function makeFinding(spec: FindingSpec): Finding {
   return {
-    id: `${spec.ruleId}:${spec.fingerprint}`,
+    id: idFor(spec),
     ruleId: spec.ruleId,
     category: spec.category,
     severity: spec.severity,
