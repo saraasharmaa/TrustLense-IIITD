@@ -31,6 +31,8 @@ export interface AdapterResult<T> {
   evidenceUrl?: string;
   error?: string;
   tinyfishRunId?: string;
+  // Set when the data was read earlier (cache hit); otherwise the run time is used
+  retrievedAt?: string;
   isReplay: boolean;
 }
 

@@ -6,7 +6,8 @@ const flag = z
   .transform((v) => v === "true");
 
 const Env = z.object({
-  DATABASE_URL: z.string().min(1),
+  // Optional so scripts that never touch the database (spike) can run; db() requires it
+  DATABASE_URL: z.string().min(1).optional(),
   TINYFISH_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-sonnet-5-5"),
