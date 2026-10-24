@@ -70,4 +70,14 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## TinyFish API facts confirmed from live docs
 
-- 
+Checked 2026-10-24 against docs.tinyfish.ai. Where it differs from docs/06, the client follows the live docs; only `lib/tinyfish/client.ts` encodes this.
+
+- Auth for Agent, Search and Fetch: `X-API-Key` header.
+- Agent: `POST https://agent.tinyfish.ai/v1/automation/run-sse`, body `{url, goal, output_schema?, browser_profile: "lite"|"stealth", proxy_config?{enabled,type,country_code}, agent_config?{max_steps,max_duration_seconds}}`. docs/06 said `default|stealth`; the real values are `lite|stealth`.
+- Agent SSE events: `STARTED{run_id}`, `STREAMING_URL`, `PROGRESS{purpose}`, `HEARTBEAT`, `COMPLETE{run_id,status,result?,error?}`. There is no separate failure event: failures arrive in `COMPLETE.error{code,message,category,retry_after}`.
+- `COMPLETED` only means the run finished; the goal can still have failed inside `result`, so adapters validate `result` with zod. Run-level error codes include `SITE_BLOCKED`, `TASK_FAILED`, `MAX_STEPS_EXCEEDED`, `TIMEOUT`, `BILLING_REJECTED`.
+- The stream has no `Last-Event-ID` resume. A cut stream is reported as an error (polling `GET /v1/runs/{id}` is possible but not implemented).
+- No credits or usage figure appears in the stream, so `source_runs.credits` stays empty for now.
+- Search: `GET https://api.search.tinyfish.ai?query=...` (also `domain_type=news`, `recency_minutes`, `after_date`, `location`), results `{position, site_name, title, snippet, url}`. Results carry no published date.
+- Fetch: `POST https://api.fetch.tinyfish.ai`, body `{urls: [..up to 10], format: markdown|html|json}`, response `{results:[{url, final_url, title, text}], errors:[{url, error}]}`; per-URL failures come back inside a 200.
+- Search is free to 12,000 requests/day and Fetch to 1,000 URLs/day; Agent draws from the wallet (a 402 `INSUFFICIENT_CREDITS` means a top-up is needed). 
