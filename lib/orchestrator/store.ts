@@ -104,6 +104,7 @@ export async function finishCase(caseId: string, result: CaseResult): Promise<vo
       coverage: score?.coverage.toFixed(3),
       isProvisional: score?.isProvisional,
       rulesVersion: score?.rulesVersion,
+      scoreResult: score ?? undefined,
       narrative: result.narrative,
     })
     .where(eq(cases.id, caseId));
