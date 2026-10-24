@@ -11,6 +11,13 @@ const Env = z.object({
   TINYFISH_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   ANTHROPIC_MODEL: z.string().default("claude-sonnet-5-5"),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
+  // An empty LLM_PROVIDER= line in .env.local means "unset"
+  LLM_PROVIDER: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.enum(["anthropic", "openai"]).optional(),
+  ),
   DEMO_MODE: flag,
   ALLOW_SIMULATION: flag,
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),

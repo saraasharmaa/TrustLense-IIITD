@@ -1,6 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { parseWith } from "@/lib/adapters/schemas";
-import { env } from "@/lib/env";
+import { completeJson, llmProvider } from "./complete";
 import { Narrative, type Finding, type ScoreResult } from "@/lib/types";
 import { templateNarrative } from "./template-narrative";
 import { narrativeProblems } from "./validate-narrative";
@@ -27,27 +26,14 @@ FINDINGS: ${JSON.stringify(brief)}
 Return JSON only: {"headline": <=140 chars, "summary": <=120 words, "keyRisks": [{"text","findingIds"}] (max 5), "strengths": [{"text","findingIds"}] (max 3), "suggestedConditions": [string] (max 4), "questionsForBorrower": [string] (max 4)}.`;
 }
 
-function extractJson(text: string): unknown {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end < start) throw new Error("reply contained no JSON object");
-  return JSON.parse(text.slice(start, end + 1));
-}
-
 async function askModel(findings: Finding[], result: ScoreResult): Promise<Narrative> {
-  const { ANTHROPIC_API_KEY, ANTHROPIC_MODEL } = env();
-  const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-  const reply = await client.messages.create(
-    {
-      model: ANTHROPIC_MODEL,
-      max_tokens: 1200,
-      system: SYSTEM,
-      messages: [{ role: "user", content: buildPrompt(findings, result) }],
-    },
-    { signal: AbortSignal.timeout(TIMEOUT_MS) },
-  );
-  const text = reply.content.map((b) => (b.type === "text" ? b.text : "")).join("");
-  const draft = parseWith(NarrativeDraft, extractJson(text), "narrative");
+  const raw = await completeJson({
+    system: SYSTEM,
+    user: buildPrompt(findings, result),
+    maxTokens: 1200,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  const draft = parseWith(NarrativeDraft, raw, "narrative");
   return { ...draft, source: "llm" };
 }
 
@@ -56,7 +42,7 @@ export async function buildNarrative(
   findings: Finding[],
   result: ScoreResult | null,
 ): Promise<Narrative> {
-  if (!result || !env().ANTHROPIC_API_KEY) return templateNarrative(findings, result);
+  if (!result || !llmProvider()) return templateNarrative(findings, result);
   try {
     const narrative = await askModel(findings, result);
     const problems = narrativeProblems(narrative, findings, result.recommendation);
