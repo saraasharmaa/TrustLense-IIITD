@@ -1,6 +1,5 @@
-import { z } from "zod";
+import { requireCaseId } from "@/lib/api/params";
 import { handle } from "@/lib/api/route";
-import { AppError } from "@/lib/errors";
 import { listEventsAfter, subscribe, type CaseEvent } from "@/lib/orchestrator/events";
 import { loadCase } from "@/lib/orchestrator/store";
 
@@ -14,9 +13,8 @@ function format(event: CaseEvent): string {
   return `id: ${event.seq}\nevent: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
-export const GET = handle(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
-  if (!z.string().uuid().safeParse(id).success) throw new AppError("not_found", "Case not found");
+export const GET = handle(async (req: Request, ctx: { params: Promise<{ id: string }> }) => {
+  const id = await requireCaseId(ctx.params);
   await loadCase(id);
   const lastSeq = Number(req.headers.get("last-event-id")) || 0;
   const encoder = new TextEncoder();

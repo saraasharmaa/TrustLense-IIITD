@@ -1,19 +1,24 @@
 import pLimit from "p-limit";
 import { withCache } from "@/lib/adapters/cache";
+import { McaOutput } from "@/lib/adapters/schemas";
 import { ADAPTER_ORDER, getAdapter, hasRequiredInputs } from "@/lib/adapters/registry";
 import type { ReplayOptions } from "@/lib/adapters/replay";
 import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
 import { env } from "@/lib/env";
-import { templateNarrative } from "@/lib/llm/template-narrative";
+import { evaluate, score } from "@/lib/scoring";
+import { buildNarrative } from "@/lib/llm/narrative";
 import type { AdapterId, SourceStatus } from "@/lib/types";
 import { emitEvent } from "./events";
 import { runAdapter, type AttemptedResult } from "./retry";
-import { evaluate, score } from "./temp-scoring-stub";
+
 import {
+  clearForRerun,
   createSourceRun,
   finishCase,
   loadCase,
+  loadKeptOutcomes,
   markCaseRunning,
+  saveDirectors,
   saveFindings,
   toAdapterInput,
   updateSourceRun,
@@ -24,6 +29,10 @@ export interface RunCaseOptions {
   backoffMs?: number;
   // Skip the source cache for this run (the ?fresh option on the API)
   fresh?: boolean;
+  // Rerun only these sources and keep the other stored runs
+  only?: AdapterId[];
+  // With `only`: take the other sources from this earlier case (monitoring) instead of this case
+  carryForwardFrom?: string;
 }
 
 // Progress and per-attempt events are best effort; the final events are awaited in order
@@ -35,7 +44,7 @@ function fireEvent(...args: Parameters<typeof emitEvent>): void {
 
 const PROGRESS_INTERVAL_MS = 500;
 const MAX_STEPS = 50;
-const DATA_STATUSES: SourceStatus[] = ["succeeded", "not_found"];
+const DATA_STATUSES: SourceStatus[] = ["succeeded", "not_found", "carried_forward"];
 
 function summarize(adapter: string, result: AttemptedResult): string {
   if (result.status === "succeeded") return `${adapter}: record retrieved`;
@@ -58,14 +67,49 @@ export async function runCase(caseId: string, options: RunCaseOptions = {}): Pro
   }
 }
 
+function directorsOf(normalized: unknown): { din?: string; name: string }[] {
+  const parsed = McaOutput.safeParse(normalized);
+  if (!parsed.success || parsed.data.status !== "ok") return [];
+  return parsed.data.directors.map((d) => ({ din: d.din ?? undefined, name: d.name }));
+}
+
+// A rerun keeps this case's other stored runs; monitoring carries clean results over from the
+// previous case and labels them so coverage and the UI show they were not re-checked
+async function keptOutcomes(
+  caseId: string,
+  rerunning: AdapterId[],
+  carryFrom?: string,
+): Promise<SourceOutcomes> {
+  if (!carryFrom || carryFrom === caseId) {
+    await clearForRerun(caseId, rerunning);
+    return loadKeptOutcomes(caseId);
+  }
+  const carried: SourceOutcomes = {};
+  for (const [id, outcome] of Object.entries(await loadKeptOutcomes(carryFrom))) {
+    const clean = outcome.status === "succeeded" || outcome.status === "not_found";
+    if (clean && !rerunning.includes(id as AdapterId)) {
+      carried[id as AdapterId] = { ...outcome, status: "carried_forward" };
+    }
+  }
+  return carried;
+}
+
 async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const { case: caseRow, subject } = await loadCase(caseId);
   const config = env();
   const input = toAdapterInput(subject);
   const requested = ADAPTER_ORDER.filter((id) => caseRow.requestedSources.includes(id));
+  const toRun = options.only ? requested.filter((id) => options.only?.includes(id)) : requested;
+
+  const outcomes: SourceOutcomes = {};
+  const statuses: SourceStatus[] = [];
+  if (options.only) {
+    Object.assign(outcomes, await keptOutcomes(caseId, toRun, options.carryForwardFrom));
+    statuses.push(...Object.values(outcomes).map((o) => o.status));
+  }
 
   await markCaseRunning(caseId);
-  await emitEvent(caseId, "case.started", { caseId, adapters: requested, mode: caseRow.mode });
+  await emitEvent(caseId, "case.started", { caseId, adapters: toRun, mode: caseRow.mode });
 
   const caseController = new AbortController();
   const capTimer = setTimeout(
@@ -82,9 +126,12 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   const withCacheIfAllowed = (adapter: SourceAdapter<unknown>) =>
     useCache ? withCache(adapter, config.SOURCE_CACHE_TTL_SECONDS) : adapter;
 
-  const outcomes: SourceOutcomes = {};
-  const statuses: SourceStatus[] = [];
   const limit = pLimit(config.MAX_PARALLEL_ADAPTERS);
+
+  async function rememberDirectors(normalized: unknown) {
+    const directors = directorsOf(normalized);
+    if (directors.length) await saveDirectors(subject.id, directors);
+  }
 
   async function runSource(id: AdapterId, adapter: SourceAdapter<unknown>) {
     const isReplay = caseRow.mode === "demo";
@@ -133,12 +180,14 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
       isReplay: result.isReplay,
       durationMs,
       tinyfishRunId: result.tinyfishRunId,
+      evidenceUrl: result.evidenceUrl,
       steps,
       rawOutput: result.rawOutput,
       normalized: result.normalized,
       error: result.error,
     });
 
+    if (id === "mca" && result.status === "succeeded") await rememberDirectors(result.normalized);
     statuses.push(result.status);
     outcomes[id] = {
       sourceRunId,
@@ -185,15 +234,18 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     });
   }
 
-  await Promise.all(
-    requested.map((id) => {
-      const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
-      return limit(() =>
-        hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
-      );
-    }),
-  );
-  clearTimeout(capTimer);
+  try {
+    await Promise.all(
+      toRun.map((id) => {
+        const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
+        return limit(() =>
+          hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
+        );
+      }),
+    );
+  } finally {
+    clearTimeout(capTimer);
+  }
 
   const status = caseStatus(statuses);
   if (status === "failed") {
@@ -210,9 +262,9 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
   for (const finding of findings) await emitEvent(caseId, "finding.created", finding);
 
   const result = score(findings, outcomes);
-  if (result) await emitEvent(caseId, "score.computed", result);
+  await emitEvent(caseId, "score.computed", result);
 
-  const narrative = templateNarrative(findings, result);
+  const narrative = await buildNarrative(findings, result);
   await emitEvent(caseId, "narrative.ready", narrative);
 
   await finishCase(caseId, { status, score: result, narrative });

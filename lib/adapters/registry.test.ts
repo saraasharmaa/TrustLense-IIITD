@@ -20,7 +20,7 @@ describe("adapter registry", () => {
   });
 
   it("skips a source with no live adapter instead of faking it", async () => {
-    const result = await getAdapter("mca", "live").run({}, {} as never);
+    const result = await getAdapter("udyam", "live").run({}, {} as never);
     expect(result).toMatchObject({ status: "skipped", isReplay: false });
   });
 

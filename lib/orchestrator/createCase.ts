@@ -7,7 +7,10 @@ import { env } from "@/lib/env";
 import { AppError } from "@/lib/errors";
 import { AdapterId } from "@/lib/types";
 import { ADAPTER_ORDER } from "@/lib/adapters/registry";
-import { validateGstin } from "./temp-scoring-stub";
+import { validateCin } from "@/lib/identifiers/cin";
+import { validateGstin, type GstinDetails } from "@/lib/identifiers/gstin";
+import { validateUdyam } from "@/lib/identifiers/udyam";
+import { orThrow } from "@/lib/identifiers/types";
 
 export const CreateCaseBody = z.object({
   gstin: z.string().nullish(),
@@ -25,11 +28,20 @@ export async function createCase(body: z.output<typeof CreateCaseBody>) {
   if (!body.gstin && !body.cin && !body.udyamNumber) {
     throw new AppError("invalid_input", "Provide a gstin, cin or udyamNumber");
   }
-  const parsed = body.gstin ? validateGstin(body.gstin) : undefined;
+  const parsed = body.gstin ? orThrow(validateGstin(body.gstin)) : undefined;
+  // Invalid identifiers are rejected before any case exists or any network call is made
+  const cin = body.cin ? orThrow(validateCin(body.cin)).cin : undefined;
+  const udyamNumber = body.udyamNumber
+    ? orThrow(validateUdyam(body.udyamNumber)).udyamNumber
+    : undefined;
   const fixture = parsed ? findDemoCompanyByGstin(parsed.gstin) : undefined;
   const mode = body.mode ?? (env().DEMO_MODE ? "demo" : "live");
 
-  const subjectId = await findOrCreateSubject(body, parsed, fixture?.subject);
+  const subjectId = await findOrCreateSubject(
+    { legalName: body.legalName, cin, udyamNumber },
+    parsed,
+    fixture?.subject,
+  );
   const [created] = await db()
     .insert(cases)
     .values({ subjectId, mode, requestedSources: body.sources })
@@ -38,8 +50,8 @@ export async function createCase(body: z.output<typeof CreateCaseBody>) {
 }
 
 async function findOrCreateSubject(
-  body: z.output<typeof CreateCaseBody>,
-  parsed: ReturnType<typeof validateGstin> | undefined,
+  ids: { legalName?: string | null; cin?: string; udyamNumber?: string },
+  parsed: GstinDetails | undefined,
   fixtureSubject:
     | {
         legalName: string;
@@ -63,19 +75,19 @@ async function findOrCreateSubject(
       workspaceId: WORKSPACE,
       // Real names are discovered by the adapters; until then the identifier is the label
       legalName:
-        body.legalName ??
+        ids.legalName ??
         fixtureSubject?.legalName ??
         parsed?.gstin ??
-        body.cin ??
-        body.udyamNumber ??
+        ids.cin ??
+        ids.udyamNumber ??
         "Unknown",
       tradeName: fixtureSubject?.tradeName,
       gstin: parsed?.gstin,
       pan: parsed?.pan,
       stateCode: parsed?.stateCode,
-      cin: body.cin ?? fixtureSubject?.cin,
-      udyamNumber: body.udyamNumber ?? fixtureSubject?.udyamNumber,
-      entityType: fixtureSubject?.entityType,
+      entityType: parsed?.entityType ?? fixtureSubject?.entityType,
+      cin: ids.cin ?? fixtureSubject?.cin,
+      udyamNumber: ids.udyamNumber ?? fixtureSubject?.udyamNumber,
     })
     .returning({ id: subjects.id });
   return row!.id;

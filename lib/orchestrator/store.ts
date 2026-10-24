@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import type { AdapterInput } from "@/lib/adapters/types";
+import { and, eq, inArray } from "drizzle-orm";
+import type { AdapterInput, SourceOutcomes } from "@/lib/adapters/types";
 import { db } from "@/lib/db/client";
 import { cases, findings, sourceRuns, subjects } from "@/lib/db/schema";
 import { AppError } from "@/lib/errors";
@@ -57,6 +57,7 @@ export interface SourceRunPatch {
   isReplay?: boolean;
   durationMs?: number;
   tinyfishRunId?: string;
+  evidenceUrl?: string;
   steps?: { t: string; text: string; url?: string }[];
   rawOutput?: unknown;
   normalized?: unknown;
@@ -108,4 +109,37 @@ export async function finishCase(caseId: string, result: CaseResult): Promise<vo
       narrative: result.narrative,
     })
     .where(eq(cases.id, caseId));
+}
+
+// Reruns overwrite in place: findings are recomputed and the rerun sources get fresh runs
+export async function clearForRerun(caseId: string, adapters: AdapterId[]): Promise<void> {
+  await db().delete(findings).where(eq(findings.caseId, caseId));
+  await db()
+    .delete(sourceRuns)
+    .where(and(eq(sourceRuns.caseId, caseId), inArray(sourceRuns.adapter, adapters)));
+}
+
+// Outcomes of the runs a rerun keeps, rebuilt from what was stored
+export async function loadKeptOutcomes(caseId: string): Promise<SourceOutcomes> {
+  const rows = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
+  const outcomes: SourceOutcomes = {};
+  for (const row of rows) {
+    outcomes[row.adapter as AdapterId] = {
+      sourceRunId: row.id,
+      status: row.status,
+      normalized: row.normalized ?? undefined,
+      evidenceUrl: row.evidenceUrl ?? undefined,
+      retrievedAt: (row.finishedAt ?? row.createdAt).toISOString(),
+      isReplay: row.isReplay,
+    };
+  }
+  return outcomes;
+}
+
+// Directors found on MCA are reused to disambiguate news and legal matches
+export async function saveDirectors(
+  subjectId: string,
+  directors: { din?: string; name: string }[],
+): Promise<void> {
+  await db().update(subjects).set({ directors }).where(eq(subjects.id, subjectId));
 }

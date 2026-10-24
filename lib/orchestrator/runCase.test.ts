@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as registry from "@/lib/adapters/registry";
 import { db } from "@/lib/db/client";
-import { cases, sourceRuns } from "@/lib/db/schema";
+import { cases, sourceRuns, subjects } from "@/lib/db/schema";
 import { createTestCase, hasDatabase } from "@/lib/testing/db";
 import { listEventsAfter } from "./events";
 import { runCase } from "./runCase";
@@ -52,6 +52,119 @@ describe.skipIf(!hasDatabase)("runCase", () => {
     const runs = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
     expect(runs.find((r) => r.adapter === "gst")).toMatchObject({ status: "failed", attempt: 2 });
     expect(runs.find((r) => r.adapter === "news")?.status).toBe("succeeded");
+  });
+
+  it("reruns only the failed source in place and keeps the other run", async () => {
+    const real = registry.getAdapter;
+    const spy = vi.spyOn(registry, "getAdapter").mockImplementation((id, mode, replay) =>
+      id === "gst"
+        ? {
+            ...real(id, mode, replay),
+            run: async () => Promise.reject(new Error("forced failure")),
+          }
+        : real(id, mode, replay),
+    );
+    const caseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["gst", "news"] })
+      .where(eq(cases.id, caseId));
+    await runCase(caseId, options);
+    const before = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
+    const newsBefore = before.find((r) => r.adapter === "news");
+
+    spy.mockRestore();
+    await runCase(caseId, { ...options, only: ["gst"] });
+
+    const [row] = await db().select().from(cases).where(eq(cases.id, caseId));
+    expect(row?.status).toBe("completed");
+    const after = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, caseId));
+    expect(after).toHaveLength(2);
+    expect(after.find((r) => r.adapter === "news")?.id).toBe(newsBefore?.id);
+    expect(after.find((r) => r.adapter === "gst")?.status).toBe("succeeded");
+  });
+
+  it("stores directors found by the mca adapter on the subject", async () => {
+    const real = registry.getAdapter;
+    vi.spyOn(registry, "getAdapter").mockImplementation((id, mode, replay) =>
+      id === "mca"
+        ? {
+            ...real(id, mode, replay),
+            run: async () => ({
+              status: "succeeded" as const,
+              isReplay: false,
+              normalized: {
+                status: "ok",
+                cin: null,
+                companyName: null,
+                companyStatus: "Active",
+                incorporationDate: null,
+                category: null,
+                companyClass: null,
+                authorizedCapital: null,
+                paidUpCapital: null,
+                registeredAddress: null,
+                lastAgmDate: null,
+                lastBalanceSheetDate: null,
+                charges: null,
+                directors: [
+                  {
+                    din: "01234567",
+                    name: "Anil Kumar",
+                    appointmentDate: null,
+                    disqualified: false,
+                  },
+                ],
+              },
+            }),
+          }
+        : real(id, mode, replay),
+    );
+    const caseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["mca"] })
+      .where(eq(cases.id, caseId));
+    await runCase(caseId, options);
+
+    const [row] = await db()
+      .select({ directors: subjects.directors })
+      .from(cases)
+      .innerJoin(subjects, eq(cases.subjectId, subjects.id))
+      .where(eq(cases.id, caseId));
+    expect(row?.directors).toEqual([{ din: "01234567", name: "Anil Kumar" }]);
+  });
+
+  it("monitoring: reruns chosen sources on a snapshot and carries the rest forward", async () => {
+    const baseId = await createTestCase("demo", SUNRISE);
+    await db()
+      .update(cases)
+      .set({ requestedSources: ["gst", "news", "mca"] })
+      .where(eq(cases.id, baseId));
+    await runCase(baseId, options);
+    const [base] = await db().select().from(cases).where(eq(cases.id, baseId));
+
+    const [next] = await db()
+      .insert(cases)
+      .values({
+        subjectId: base!.subjectId,
+        mode: "demo",
+        triggeredBy: "simulation",
+        requestedSources: base!.requestedSources,
+      })
+      .returning({ id: cases.id });
+    await runCase(next!.id, {
+      replay: { ...options.replay, snapshot: "t1" },
+      backoffMs: 1,
+      only: ["gst", "news"],
+      carryForwardFrom: baseId,
+    });
+
+    const [row] = await db().select().from(cases).where(eq(cases.id, next!.id));
+    expect(row?.status).toBe("completed");
+    const runs = await db().select().from(sourceRuns).where(eq(sourceRuns.caseId, next!.id));
+    expect(runs.map((r) => r.adapter).sort()).toEqual(["gst", "news"]);
+    expect(JSON.stringify(runs.find((r) => r.adapter === "gst")?.normalized)).toMatch(/Suspended/i);
   });
 
   it("marks the case failed when no source returns data", async () => {
