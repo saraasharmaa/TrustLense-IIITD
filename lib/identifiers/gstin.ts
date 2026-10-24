@@ -1,3 +1,4 @@
+import { validatePan } from "./pan";
 import { GST_STATES } from "./states";
 import { fail, type IdentifierResult } from "./types";
 
@@ -15,7 +16,13 @@ function expectedChecksum(first14: string): string {
   return CHECKSUM_ALPHABET.charAt((36 - (sum % 36)) % 36);
 }
 
-export type GstinDetails = { gstin: string; stateCode: string; stateName: string };
+export type GstinDetails = {
+  gstin: string;
+  pan: string;
+  stateCode: string;
+  stateName: string;
+  entityType: string;
+};
 
 export function validateGstin(input: string): IdentifierResult<GstinDetails> {
   const gstin = input.trim().toUpperCase();
@@ -28,5 +35,7 @@ export function validateGstin(input: string): IdentifierResult<GstinDetails> {
   if (expectedChecksum(gstin.slice(0, 14)) !== gstin.charAt(14)) {
     return fail("checksum", "GSTIN checksum is invalid");
   }
-  return { ok: true, value: { gstin, stateCode, stateName } };
+  const pan = validatePan(gstin.slice(2, 12));
+  if (!pan.ok) return pan;
+  return { ok: true, value: { gstin, stateCode, stateName, ...pan.value } };
 }

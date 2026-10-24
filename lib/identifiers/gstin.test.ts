@@ -43,3 +43,32 @@ describe("validateGstin checksum", () => {
     });
   });
 });
+
+describe("validateGstin derivation", () => {
+  it("AC-1: derives PAN, state and entity type", () => {
+    expect(validateGstin("33AABCS7345M1Z3")).toEqual({
+      ok: true,
+      value: {
+        gstin: "33AABCS7345M1Z3",
+        pan: "AABCS7345M",
+        stateCode: "33",
+        stateName: "Tamil Nadu",
+        entityType: "Company",
+      },
+    });
+  });
+
+  it.each([
+    ["08AAGCA4821K1ZM", "AAGCA4821K", "Rajasthan"],
+    ["29AAECK9012P1ZZ", "AAECK9012P", "Karnataka"],
+  ])("derives the fixture subject %s", (gstin, pan, stateName) => {
+    expect(validateGstin(gstin)).toMatchObject({ ok: true, value: { pan, stateName } });
+  });
+
+  it("derives a firm from PAN type F", () => {
+    expect(validateGstin("27AAPFU0939F1ZV")).toMatchObject({
+      ok: true,
+      value: { entityType: "Firm/LLP" },
+    });
+  });
+});
