@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CIN_STATES, GST_STATES } from "./states";
+import { CIN_STATES, GST_STATES, stateNameInText } from "./states";
 
 describe("state tables", () => {
   it("covers GST codes 01-38 except 28, plus 97 and 99", () => {
@@ -20,5 +20,25 @@ describe("state tables", () => {
     expect(CIN_STATES.TN).toBe("Tamil Nadu");
     expect(CIN_STATES.RJ).toBe("Rajasthan");
     expect(CIN_STATES.KA).toBe("Karnataka");
+  });
+});
+
+describe("stateNameInText", () => {
+  it("finds the state named in an address, case-insensitively", () => {
+    expect(stateNameInText("12 Mill Road, Tiruppur, TAMIL NADU 641601")).toBe("Tamil Nadu");
+    expect(stateNameInText("Plot 4, Sector 8, Jaipur, Rajasthan")).toBe("Rajasthan");
+  });
+
+  it("finds multi-word states across extra whitespace", () => {
+    expect(stateNameInText("Lucknow, Uttar   Pradesh")).toBe("Uttar Pradesh");
+  });
+
+  it("returns null when no state or more than one state is named", () => {
+    expect(stateNameInText("12 Mill Road, Tiruppur")).toBeNull();
+    expect(stateNameInText("Near Delhi border, Haryana")).toBeNull();
+  });
+
+  it("does not match a state inside a longer word", () => {
+    expect(stateNameInText("Goann Street")).toBeNull();
   });
 });

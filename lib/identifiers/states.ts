@@ -83,3 +83,14 @@ export const CIN_STATES: Record<string, string> = {
   UR: "Uttarakhand",
   WB: "West Bengal",
 };
+
+const GST_STATE_NAMES = Object.values(GST_STATES).filter((name) => name !== "Centre Jurisdiction");
+
+// Returns a state only when exactly one state name appears, so an address that mentions two
+// states is "unparseable" instead of being guessed (docs/07 BIZ-03 skips those).
+export function stateNameInText(text: string): string | null {
+  const found = GST_STATE_NAMES.filter((name) =>
+    new RegExp(`\\b${name.replace(/ /g, "\\s+")}\\b`, "i").test(text),
+  );
+  return found.length === 1 ? (found[0] ?? null) : null;
+}
