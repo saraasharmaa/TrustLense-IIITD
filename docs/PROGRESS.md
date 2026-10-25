@@ -58,7 +58,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 | Adapter | Reaches data? | CAPTCHA/OTP | Median latency | Credits/run | Reliability (x/5) | Tier decision |
 |---|---|---|---|---|---|---|
 | gst | no | image CAPTCHA (TinyFish: "Task blocked by CAPTCHA") | 34.5 s (1 run) | not reported by the stream; wallet read $16 before and after | 0/1 (1 run, listed company GSTIN, 2026-10-24) | Live attempt only: reports `captcha_blocked`; demo uses labelled replay |
-| news | Search and Fetch reached live data; classification not verified | none | 11.1 s until the classifier failed | Search/Fetch free tier | 0/1: the Anthropic API rejected the call ("credit balance is too low"), so the adapter correctly reported `failed` | Not decided: rerun after Anthropic credits are added |
+| news | yes (Search, Fetch, Gemini classification), 2026-10-25 | none | 12.1 s (1 run, "Reliance Industries Limited") | Search/Fetch free tier; Gemini free tier | 1/1 succeeded, schema valid | Live; one Fetch page hung during development, so Search/Fetch now time out at 25 s |
 | mca | | | | | | |
 | legal | | | | | | |
 | udyam | | | | | | |
@@ -91,6 +91,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 - 2026-10-24 `demo:check` runs in process (no server): database, each fixture in replay against its expected score/grade, and the Sunrise simulated change; it exits non-zero on any failure.
 - 2026-10-25 A built the MVP UI alone (B had not started): shadcn CLI hung, so Button/Badge/Card/Skeleton are hand-written in the shadcn style. The run page follows the SSE stream and refetches the case view on each event, so a refresh rebuilds from the server.
 - 2026-10-25 Simulating a change takes about 25 s against a remote Neon database (many sequential round trips plus replay delays); a local Postgres is much faster.
+- 2026-10-25 LLM calls go through `lib/llm/complete.ts` with three providers (Anthropic, OpenAI, Gemini via its OpenAI-compatible endpoint); `LLM_PROVIDER` picks one. OpenAI-compatible calls time out at 30 s with one retry.
+- 2026-10-25 TinyFish Search and Fetch are limited to 25 s each: a hung page otherwise stalled the News adapter for minutes.
 - 2026-10-24 Env is parsed lazily in `lib/env.ts` so builds and tests don't need a full `.env.local`.
 - 2026-10-24 B: GST state codes come from the GST e-invoice master codes page (gst.gov.in). It has no code 28, so a GSTIN starting 28 is rejected although FR-1.2 says 01-38; no official source was found for legacy Andhra Pradesh 28. Pending the humans' call.
 - 2026-10-24 B: CIN state letters are NOT from an official source (MCA publishes none). An unknown code gives `stateName: null`, never a rejection.
@@ -101,7 +103,7 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 
 ## Blocked / questions for humans
 
-- **Anthropic account has no credits.** The live News spike (2026-10-24) failed at classification with "credit balance is too low". Add credits to the account behind `ANTHROPIC_API_KEY`, then rerun `npm run spike -- news "Reliance Industries Limited"`. The narrative falls back to the template meanwhile.
+- LLM provider: Anthropic and OpenAI both rejected the calls for no credit, so News was verified with Gemini (`LLM_PROVIDER=gemini`, model `gemini-flash-lite-latest`; the named `gemini-2.5-flash` returned 404 for this key and `gemini-flash-latest` was slow).
 - **M2 partly verified live (2026-10-24):** TinyFish Agent, Search and Fetch work with the real key; GST ends in `captcha_blocked` (recorded, no bypass); News is unverified end to end (see above). Previously:  the TinyFish client, GST and News adapters are tested only with mocks. No live run has happened because `.env.local` has no `TINYFISH_API_KEY` or `ANTHROPIC_API_KEY`; the spike table above stays empty until then.
 - Tests that need Postgres skip unless `DATABASE_URL` is set. A verified them against a throwaway local database `trustlens_dev` (created with `createdb`, no `.env.local` involved). `drizzle-kit push` asks an interactive question on that database, so a new column was added with `psql`; a fresh database pushes cleanly.
 - `gh` (GitHub CLI) is not installed on this machine, so A cannot open PRs, list B's PRs or merge. `feat/scaffold` is pushed; open its PR from the GitHub link, or install and log in to `gh`.
