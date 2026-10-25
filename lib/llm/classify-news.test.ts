@@ -18,6 +18,12 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("<<<Title\nBody>>>");
   });
 
+  it("tells the model that directory and profile pages are not news", () => {
+    const prompt = buildPrompt(target, "T", "B");
+    expect(prompt).toMatch(/directory entry/);
+    expect(prompt).toMatch(/Use "positive_growth" only when/);
+  });
+
   it("truncates very long articles", () => {
     expect(buildPrompt(target, "T", "x".repeat(20000)).length).toBeLessThan(8000);
   });
