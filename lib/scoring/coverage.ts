@@ -1,7 +1,7 @@
 import type { SourceOutcome, SourceOutcomes } from "@/lib/adapters/types";
 import type { AdapterId, Evidence, Finding } from "@/lib/types";
 import { makeFinding, subjectKey } from "./finding";
-import { CATEGORY_LABELS, type ScoredCategory } from "./rules";
+import type { ScoredCategory } from "./rules";
 
 const ADAPTER_CATEGORY: Record<AdapterId, ScoredCategory> = {
   gst: "STATUTORY",
@@ -13,6 +13,17 @@ const ADAPTER_CATEGORY: Record<AdapterId, ScoredCategory> = {
 };
 
 const ADAPTERS = Object.keys(ADAPTER_CATEGORY) as AdapterId[];
+
+// Named per source: two sources share the ADVERSE category, and "adverse news" must not be reported
+// as unverified when only the regulatory lists were not checked
+const SOURCE_LABELS: Record<AdapterId, string> = {
+  gst: "GST registration and filings",
+  mca: "company standing (MCA)",
+  legal: "court and insolvency records",
+  news: "adverse news",
+  udyam: "Udyam registration",
+  regulatory: "regulator and public lists",
+};
 
 const UNVERIFIED_REASONS: Partial<Record<string, string>> = {
   failed: "the source could not be read",
@@ -56,7 +67,7 @@ export function coverageFindings(outcomes: SourceOutcomes, requested: AdapterId[
     const outcome = outcomes[adapter];
     const reason = reasonFor(adapter, requested, outcome);
     if (!reason) return [];
-    const label = CATEGORY_LABELS[ADAPTER_CATEGORY[adapter]];
+    const label = SOURCE_LABELS[adapter];
     return [
       makeFinding({
         ruleId: `COVERAGE-${adapter.toUpperCase()}`,

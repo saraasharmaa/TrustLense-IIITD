@@ -45,7 +45,9 @@ Return JSON only: {"category": one of [fraud, default, insolvency, regulatory_ac
  "severity": one of [high, medium, low, none], "entityMatchConfidence": 0..1, "publishedDate": "YYYY-MM-DD" or null, "reason": "<=25 words"}.
 entityMatchConfidence is HIGH only if the article clearly refers to THIS company (name AND at least one of city/state/director/GSTIN-linked detail match).
 If the article is about a different company with a similar name, use <0.4. Do not speculate.
-publishedDate is the publication date stated in the article text; use null if no date is shown.`;
+publishedDate is the publication date stated in the article text; use null if no date is shown.
+Only news reports count. A company profile, GST or tax-number directory entry, registry or listing page, stock quote, job board or the company's own website is NOT a news article about an event: classify it as "other" with severity "none".
+Use "positive_growth" only when the text reports a real development such as expansion, a major contract, an award or improved results. Use a risk category only when the text itself reports that event about this company. Do not infer risk or growth from the company's size or name.`;
 }
 
 export async function classifyArticle(
