@@ -24,8 +24,8 @@ describe("coverageFindings", () => {
       severity: "info",
       penalty: 0,
       hardStop: false,
-      title: "Could not verify GST compliance",
-      detail: `Could not verify GST compliance: ${reason}.`,
+      title: "Could not verify GST registration and filings",
+      detail: `Could not verify GST registration and filings: ${reason}.`,
     });
     expect(finding?.evidence).toEqual([
       expect.objectContaining({ sourceRunId: o.sourceRunId, adapter: "gst", url: o.evidenceUrl }),
@@ -47,14 +47,16 @@ describe("coverageFindings", () => {
       "COVERAGE-REGULATORY",
     ]);
     expect(findings[0]).toMatchObject({
-      detail: "Could not verify company standing: this source was not requested.",
+      detail: "Could not verify company standing (MCA): this source was not requested.",
       evidence: [],
     });
   });
 
   it("reports a requested source with no recorded result", () => {
     const [finding] = coverageFindings(outcomesOf({}), ALL);
-    expect(finding?.detail).toBe("Could not verify GST compliance: no result was recorded.");
+    expect(finding?.detail).toBe(
+      "Could not verify GST registration and filings: no result was recorded.",
+    );
   });
 
   it("keeps the finding without evidence when the failed run has no URL", () => {
