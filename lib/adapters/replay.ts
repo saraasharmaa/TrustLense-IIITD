@@ -52,7 +52,7 @@ export function replayUrl(adapter: AdapterId, companyKey: string): string {
 }
 
 export function replayAdapter(id: AdapterId, options: ReplayOptions = {}): SourceAdapter<unknown> {
-  const [minDelay, maxDelay] = options.delayMs ?? [1000, 6000];
+  const [minDelay, maxDelay] = options.delayMs ?? [600, 2500];
   const snapshotLabel = options.snapshot ?? "t0";
 
   return {
