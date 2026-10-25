@@ -1,5 +1,7 @@
 import type { AdapterId } from "@/lib/types";
+import { env } from "@/lib/env";
 import { gstAdapter } from "./gst";
+import { gstApiAdapter } from "./gst-api";
 import { legalAdapter } from "./legal";
 import { mcaAdapter } from "./mca";
 import { newsAdapter } from "./news";
@@ -38,6 +40,8 @@ export function getAdapter(
   replay: ReplayOptions = {},
 ): SourceAdapter<unknown> {
   if (mode === "demo") return replayAdapter(id, replay);
+  // A licensed API key replaces the CAPTCHA-blocked portal agent for GST
+  if (id === "gst" && env().GSTINAPI_API_KEY) return gstApiAdapter;
   return liveAdapters[id] ?? unavailableAdapter(id);
 }
 
