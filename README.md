@@ -26,7 +26,8 @@ Click path: **Sunrise Textiles** chip, **Start check**, watch the lanes finish, 
 | TinyFish Agent, Search, Fetch | Reached with a real key (2026-10-24) |
 | GST (live) | **Verified live (2026-10-25)** through the licensed gstinapi.in API when `GSTINAPI_API_KEY` is set: registration status, name and dates in 1.5 s. A free account has no filing history (needs a credit pack), so filing rules are skipped and coverage says so. Without a key, the portal agent reports `captcha_blocked` (no bypass) and the analyst can enter the status themselves |
 | News (live) | Verified end to end on 2026-10-25 for one listed company (Search, Fetch, Gemini classification, 12 s) |
-| MCA, Legal | Run live once on 2026-10-25 (Reliance CIN and name): both timed out after reaching the portal pages, so live runs report `timeout`; demo uses labelled replay |
+| MCA | **Verified live (2026-10-25)** through Sandbox.co.in when its live key and secret are set: status, capital and address by CIN in 1 s. No director list or filing dates, so the overdue-filing rule is not evaluated. Without credentials it is replay |
+| Legal | The portal agent timed out on 2026-10-25; replay in the demo |
 | Udyam, Regulatory | Replay only; no live adapter |
 
 Details and the spike table are in `docs/PROGRESS.md`.

@@ -14,6 +14,8 @@ const Env = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
   GSTINAPI_API_KEY: z.string().optional(),
+  SANDBOX_API_KEY: z.string().optional(),
+  SANDBOX_API_SECRET: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default("gemini-flash-lite-latest"),
   // An empty LLM_PROVIDER= line in .env.local means "unset"
