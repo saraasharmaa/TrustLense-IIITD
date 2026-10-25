@@ -10,23 +10,22 @@ const TOKEN_TTL_MS = 23 * 3_600_000;
 
 const nullableString = z.string().nullable().optional();
 
-const MasterDataResponse = z.object({
-  data: z.array(
-    z.object({
-      cin: z.string(),
-      company_name: z.string(),
-      company_status: nullableString,
-      company_category: nullableString,
-      company_class: nullableString,
-      authorized_capital: z.number().nullable().optional(),
-      paidup_capital: z.number().nullable().optional(),
-      company_registration_date: nullableString,
-      registered_office_address: nullableString,
-    }),
-  ),
+const Company = z.object({
+  cin: z.string(),
+  company_name: z.string(),
+  company_status: nullableString,
+  company_category: nullableString,
+  company_class: nullableString,
+  authorized_capital: z.number().nullable().optional(),
+  paidup_capital: z.number().nullable().optional(),
+  company_registration_date: nullableString,
+  registered_office_address: nullableString,
 });
 
-export type MasterData = z.output<typeof MasterDataResponse>["data"][number];
+// The docs sample shows an array, the live API returns a single object: accept both
+const MasterDataResponse = z.object({ data: z.union([Company, z.array(Company)]) });
+
+export type MasterData = z.output<typeof Company>;
 
 export class SandboxError extends AppError {
   constructor(
@@ -102,5 +101,6 @@ export async function fetchCompanyMasterData(cin: string): Promise<MasterData | 
       res.status,
       `Sandbox returned HTTP ${res.status}: ${json?.message ?? "no detail"}`,
     );
-  return MasterDataResponse.parse(json).data[0] ?? null;
+  const { data } = MasterDataResponse.parse(json);
+  return (Array.isArray(data) ? data[0] : data) ?? null;
 }

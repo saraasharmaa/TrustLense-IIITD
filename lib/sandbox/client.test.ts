@@ -39,6 +39,16 @@ describe("fetchCompanyMasterData", () => {
     expect(JSON.parse(callInit.body)).toEqual({ cin: "L1" });
   });
 
+  it("accepts the single-object shape the live API returns", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json({ data: { access_token: "t" } }))
+      .mockResolvedValueOnce(
+        json({ data: { cin: "L1", company_name: "ACME LTD", company_status: "Active" } }),
+      );
+    const { fetchCompanyMasterData } = await load({ key: "key_live_abc", secret: "s" });
+    expect((await fetchCompanyMasterData("L1"))?.company_name).toBe("ACME LTD");
+  });
+
   it("returns null for a 404", async () => {
     fetchMock
       .mockResolvedValueOnce(json({ data: { access_token: "t" } }))
