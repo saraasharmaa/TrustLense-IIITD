@@ -216,8 +216,10 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     }
   }
 
-  async function skipSource(id: AdapterId) {
-    const reason = "missing_identifier";
+  async function skipSource(id: AdapterId, adapter: SourceAdapter<unknown>) {
+    // Say which identifier is missing so the analyst knows what to add
+    const needs = adapter.requires.map((keys) => keys.join(" + ")).join(" or ");
+    const reason = `missing_identifier: needs ${needs}`;
     const sourceRunId = await createSourceRun(caseId, id, "skipped", reason);
     statuses.push("skipped");
     outcomes[id] = {
@@ -239,7 +241,7 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
       toRun.map((id) => {
         const adapter = withCacheIfAllowed(getAdapter(id, caseRow.mode, options.replay));
         return limit(() =>
-          hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id),
+          hasRequiredInputs(adapter, input) ? runSource(id, adapter) : skipSource(id, adapter),
         );
       }),
     );
