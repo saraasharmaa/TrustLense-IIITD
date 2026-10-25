@@ -59,8 +59,8 @@ Scoring and identifiers are called by A's orchestrator through these signatures.
 |---|---|---|---|---|---|---|
 | gst | no | image CAPTCHA (TinyFish: "Task blocked by CAPTCHA") | 34.5 s (1 run) | not reported by the stream; wallet read $16 before and after | 0/1 (1 run, listed company GSTIN, 2026-10-24) | Live attempt only: reports `captcha_blocked`; demo uses labelled replay |
 | news | yes (Search, Fetch, Gemini classification), 2026-10-25 | none | 12.1 s (1 run, "Reliance Industries Limited") | Search/Fetch free tier; Gemini free tier | 1/1 succeeded, schema valid | Live; one Fetch page hung during development, so Search/Fetch now time out at 25 s |
-| mca | | | | | | |
-| legal | | | | | | |
+| mca | no | none seen; the agent navigated to the MCA master data page and then ran past the time limit | >180 s (1 run, Reliance CIN, spike cap 180 s) | wallet unchanged at $16 | 0/1 (timeout) | Live attempt only: reports `timeout`/`failed`; demo uses labelled replay |
+| legal | no | none seen; eCourts and IBBI pages were reached but the run did not finish | >180 s (1 run, "Reliance Industries Limited") | wallet unchanged at $16 | 0/1 (timeout) | Live attempt only: reports `timeout`/`failed`; demo uses labelled replay |
 | udyam | | | | | | |
 | regulatory | | | | | | |
 
