@@ -24,13 +24,27 @@ export interface CaseEvent {
 
 type Listener = (event: CaseEvent) => void;
 
-// On globalThis so Next dev hot reloads don't orphan live subscribers
+interface Pending {
+  type: CaseEventType;
+  data: unknown;
+  resolve: (event: CaseEvent) => void;
+  reject: (err: unknown) => void;
+}
+
+interface CaseQueue {
+  pending: Pending[];
+  flushing: boolean;
+  // Next seq to hand out; read from the database once, then counted in memory
+  nextSeq?: number;
+}
+
+// On globalThis so Next dev hot reloads don't orphan live subscribers or queues
 const globalForEvents = globalThis as unknown as {
   trustlensListeners?: Map<string, Set<Listener>>;
-  trustlensWriteQueues?: Map<string, Promise<unknown>>;
+  trustlensQueues?: Map<string, CaseQueue>;
 };
 const listeners = (globalForEvents.trustlensListeners ??= new Map<string, Set<Listener>>());
-const writeQueues = (globalForEvents.trustlensWriteQueues ??= new Map<string, Promise<unknown>>());
+const queues = (globalForEvents.trustlensQueues ??= new Map<string, CaseQueue>());
 
 export function subscribe(caseId: string, listener: Listener): () => void {
   const set = listeners.get(caseId) ?? new Set<Listener>();
@@ -42,29 +56,60 @@ export function subscribe(caseId: string, listener: Listener): () => void {
   };
 }
 
-async function insertEvent(caseId: string, type: CaseEventType, data: unknown): Promise<CaseEvent> {
-  // seq is assigned in the insert itself; the unique (case_id, seq) index guards against races
-  const rows = await db().execute<{ seq: number; ts: Date }>(sql`
-    insert into case_events (case_id, seq, type, data)
-    select ${caseId}, coalesce(max(seq), 0) + 1, ${type}, ${JSON.stringify(data)}::jsonb
-    from case_events where case_id = ${caseId}
-    returning seq, ts`);
-  const row = rows[0];
-  if (!row) throw new Error("case event insert returned no row");
-  return { seq: row.seq, type, ts: new Date(row.ts).toISOString(), data };
+async function writeBatch(caseId: string, queue: CaseQueue, batch: Pending[]): Promise<void> {
+  if (queue.nextSeq === undefined) {
+    const [row] = await db()
+      .select({ max: sql<number>`coalesce(max(${caseEvents.seq}), 0)` })
+      .from(caseEvents)
+      .where(eq(caseEvents.caseId, caseId));
+    queue.nextSeq = (row?.max ?? 0) + 1;
+  }
+  const first = queue.nextSeq;
+  const rows = batch.map((p, i) => ({ caseId, seq: first + i, type: p.type, data: p.data }));
+  // One insert for everything queued: each round trip to a remote database is slow
+  const written = await db()
+    .insert(caseEvents)
+    .values(rows)
+    .returning({ seq: caseEvents.seq, ts: caseEvents.ts });
+  queue.nextSeq = first + batch.length;
+  const tsBySeq = new Map(written.map((w) => [w.seq, w.ts]));
+  batch.forEach((p, i) => {
+    const event: CaseEvent = {
+      seq: first + i,
+      type: p.type,
+      ts: (tsBySeq.get(first + i) ?? new Date()).toISOString(),
+      data: p.data,
+    };
+    listeners.get(caseId)?.forEach((listener) => listener(event));
+    p.resolve(event);
+  });
 }
 
-// Adapters run concurrently, so writes per case go through a queue to keep seq in emit order
+async function flush(caseId: string, queue: CaseQueue): Promise<void> {
+  if (queue.flushing) return;
+  queue.flushing = true;
+  try {
+    while (queue.pending.length > 0) {
+      const batch = queue.pending.splice(0);
+      try {
+        await writeBatch(caseId, queue, batch);
+      } catch (err) {
+        queue.nextSeq = undefined; // re-read from the database after a failure
+        batch.forEach((p) => p.reject(err));
+      }
+    }
+  } finally {
+    queue.flushing = false;
+  }
+}
+
+// Events are written in emit order, and everything queued while a write is running goes out as one batch
 export function emitEvent(caseId: string, type: CaseEventType, data: unknown): Promise<CaseEvent> {
-  const previous = writeQueues.get(caseId) ?? Promise.resolve();
-  const written = previous.then(() => insertEvent(caseId, type, data));
-  writeQueues.set(
-    caseId,
-    written.catch(() => undefined),
-  );
-  return written.then((event) => {
-    listeners.get(caseId)?.forEach((listener) => listener(event));
-    return event;
+  const queue = queues.get(caseId) ?? { pending: [], flushing: false };
+  queues.set(caseId, queue);
+  return new Promise((resolve, reject) => {
+    queue.pending.push({ type, data, resolve, reject });
+    void flush(caseId, queue);
   });
 }
 
