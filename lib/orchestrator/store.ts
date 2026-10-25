@@ -144,3 +144,7 @@ export async function saveDirectors(
 ): Promise<void> {
   await db().update(subjects).set({ directors }).where(eq(subjects.id, subjectId));
 }
+
+export async function saveNarrative(caseId: string, narrative: Narrative): Promise<void> {
+  await db().update(cases).set({ narrative }).where(eq(cases.id, caseId));
+}
