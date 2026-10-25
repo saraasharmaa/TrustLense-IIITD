@@ -4,6 +4,7 @@ import { gstAdapter } from "./gst";
 import { gstApiAdapter } from "./gst-api";
 import { legalAdapter } from "./legal";
 import { mcaAdapter } from "./mca";
+import { mcaApiAdapter } from "./mca-api";
 import { newsAdapter } from "./news";
 import { replayAdapter, type ReplayOptions } from "./replay";
 import type { AdapterInput, SourceAdapter } from "./types";
@@ -42,6 +43,7 @@ export function getAdapter(
   if (mode === "demo") return replayAdapter(id, replay);
   // A licensed API key replaces the CAPTCHA-blocked portal agent for GST
   if (id === "gst" && env().GSTINAPI_API_KEY) return gstApiAdapter;
+  if (id === "mca" && env().SANDBOX_API_KEY && env().SANDBOX_API_SECRET) return mcaApiAdapter;
   return liveAdapters[id] ?? unavailableAdapter(id);
 }
 
