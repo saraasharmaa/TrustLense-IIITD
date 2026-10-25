@@ -271,13 +271,14 @@ export async function finalizeCase(
     id: crypto.randomUUID(),
   }));
   await saveFindings(caseId, findings);
-  for (const finding of findings) await emitEvent(caseId, "finding.created", finding);
+  // Events are written in order, so only the last one needs awaiting; the rest ride in the same batch
+  for (const finding of findings) fireEvent(caseId, "finding.created", finding);
 
   const result = score(findings, outcomes);
-  await emitEvent(caseId, "score.computed", result);
+  fireEvent(caseId, "score.computed", result);
 
   const narrative = await buildNarrative(findings, result);
-  await emitEvent(caseId, "narrative.ready", narrative);
+  fireEvent(caseId, "narrative.ready", narrative);
 
   await finishCase(caseId, { status, score: result, narrative });
   await emitEvent(caseId, "report.ready", { caseId, status });
