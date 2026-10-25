@@ -23,6 +23,21 @@ const CompleteResponse = z.object({
   unavailable: z.array(z.string()).default([]),
 });
 
+// Free accounts can only use this basic lookup (registration data, no filing history)
+const BasicResponse = z.object({
+  success: z.literal(true),
+  data: z.object({
+    legal_name: nullableString,
+    trade_name: nullableString,
+    registration_date: nullableString,
+    cancellation_date: nullableString,
+    status: nullableString,
+    taxpayer_type: nullableString,
+    address: nullableString,
+    business_constitution: nullableString.optional(),
+  }),
+});
+
 const ReturnsResponse = z.object({
   success: z.literal(true),
   returns: z.array(
@@ -64,6 +79,12 @@ async function call(path: string): Promise<unknown> {
     );
   }
   return json;
+}
+
+export type GstBasic = z.output<typeof BasicResponse>["data"];
+
+export async function fetchBasic(gstin: string): Promise<GstBasic> {
+  return BasicResponse.parse(await call(`/v1/gstin/${encodeURIComponent(gstin)}`)).data;
 }
 
 // One call (2 credits) for registration data and filing frequency

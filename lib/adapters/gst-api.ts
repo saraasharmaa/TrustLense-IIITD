@@ -1,4 +1,5 @@
 import {
+  fetchBasic,
   fetchProfile,
   fetchReturns,
   GstApiError,
@@ -40,6 +41,27 @@ function failure(err: unknown): AdapterResult<GstData> {
   return { status: "failed", error: message, isReplay: false };
 }
 
+// Registration data and, when the account allows it, the filing history. A free account is limited to
+// the basic lookup, so it still gets status and age rules but no filing rules.
+async function loadGst(gstin: string, now: Date, emit: (text: string) => void) {
+  try {
+    const { profile, unavailable } = await fetchProfile(gstin);
+    const monthly =
+      profile.filing_frequency === "Monthly" && !unavailable.includes("filing_frequency");
+    let returns: GstReturns = [];
+    if (monthly) {
+      emit("Reading the GSTR-3B filing history");
+      const periods = dueGstr3bPeriods(now, PERIODS);
+      returns = returnsFor(periods, await loadReturns(gstin, periods));
+    }
+    return { fields: { ...profile, cancellation_date: null }, returns, plan: "complete" as const };
+  } catch (err) {
+    if (!(err instanceof GstApiError) || err.httpStatus !== 403) throw err;
+    emit("Credit pack not active: using the basic GSTIN lookup without filing history");
+    return { fields: await fetchBasic(gstin), returns: [] as GstReturns, plan: "basic" as const };
+  }
+}
+
 // Licensed-API tier for GST: no CAPTCHA, so live GST works without an analyst in the loop
 export const gstApiAdapter: SourceAdapter<GstData> = {
   id: "gst",
@@ -50,37 +72,27 @@ export const gstApiAdapter: SourceAdapter<GstData> = {
     const gstin = input.gstin as string;
     try {
       ctx.emitProgress("Looking up the GSTIN with the licensed GST API");
-      const { profile, unavailable } = await fetchProfile(gstin);
-
-      const monthly =
-        profile.filing_frequency === "Monthly" && !unavailable.includes("filing_frequency");
-      const periods = dueGstr3bPeriods(ctx.now, PERIODS);
-      let returns: GstReturns = [];
-      if (monthly) {
-        ctx.emitProgress("Reading the GSTR-3B filing history");
-        returns = returnsFor(periods, await loadReturns(gstin, periods));
-      }
-
+      const { fields, returns, plan } = await loadGst(gstin, ctx.now, ctx.emitProgress);
       const raw = {
         status: "ok",
-        legalName: profile.legal_name,
-        tradeName: profile.trade_name,
+        legalName: fields.legal_name,
+        tradeName: fields.trade_name,
         gstin,
-        registrationStatus: profile.status,
-        registrationDate: profile.registration_date,
-        cancellationDate: null,
-        constitution: profile.business_constitution,
-        taxpayerType: profile.taxpayer_type,
+        registrationStatus: fields.status,
+        registrationDate: fields.registration_date,
+        cancellationDate: fields.cancellation_date,
+        constitution: fields.business_constitution ?? null,
+        taxpayerType: fields.taxpayer_type,
         stateJurisdiction: null,
         centreJurisdiction: null,
         businessActivities: [],
-        principalPlace: profile.address,
+        principalPlace: fields.address,
         returns,
       };
       return {
         status: "succeeded",
         normalized: parseWith(GstOutput, raw, "GST API output"),
-        rawOutput: { provider: "gstinapi.in", profile, filingFrequency: profile.filing_frequency },
+        rawOutput: { provider: "gstinapi.in", plan, fields },
         evidenceUrl: GST_SEARCH_URL,
         isReplay: false,
       };

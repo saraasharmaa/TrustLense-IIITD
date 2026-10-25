@@ -2,7 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { gstApiAdapter } from "./gst-api";
 import type { AdapterContext } from "./types";
 
-const mocks = vi.hoisted(() => ({ fetchProfile: vi.fn(), fetchReturns: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  fetchProfile: vi.fn(),
+  fetchReturns: vi.fn(),
+  fetchBasic: vi.fn(),
+}));
 vi.mock("@/lib/gstinapi/client", () => {
   class GstApiError extends Error {
     constructor(
@@ -12,7 +16,12 @@ vi.mock("@/lib/gstinapi/client", () => {
       super(message);
     }
   }
-  return { fetchProfile: mocks.fetchProfile, fetchReturns: mocks.fetchReturns, GstApiError };
+  return {
+    fetchProfile: mocks.fetchProfile,
+    fetchReturns: mocks.fetchReturns,
+    fetchBasic: mocks.fetchBasic,
+    GstApiError,
+  };
 });
 
 const ctx = (): AdapterContext => ({
@@ -48,6 +57,7 @@ const filed = (period: string) => ({
 beforeEach(() => {
   mocks.fetchProfile.mockReset();
   mocks.fetchReturns.mockReset();
+  mocks.fetchBasic.mockReset();
 });
 
 describe("gstApiAdapter", () => {
@@ -83,6 +93,25 @@ describe("gstApiAdapter", () => {
     mocks.fetchProfile.mockResolvedValue({ ...profile(null), unavailable: ["filing_frequency"] });
     const result = await gstApiAdapter.run({ gstin: "27AAACR5055K1Z7" }, ctx());
     expect((result.normalized as { returns: unknown[] }).returns).toEqual([]);
+  });
+
+  it("falls back to the basic lookup on a free account, with registration data but no filing history", async () => {
+    const { GstApiError } = await import("@/lib/gstinapi/client");
+    mocks.fetchProfile.mockRejectedValue(new GstApiError(403, "needs a credit pack"));
+    mocks.fetchBasic.mockResolvedValue({
+      legal_name: "ACME PRIVATE LIMITED",
+      trade_name: null,
+      registration_date: "2018-04-01",
+      cancellation_date: null,
+      status: "Suspended",
+      taxpayer_type: "Regular",
+      address: "Pune",
+    });
+    const result = await gstApiAdapter.run({ gstin: "27AAACR5055K1Z7" }, ctx());
+    expect(result.status).toBe("succeeded");
+    expect(result.normalized).toMatchObject({ registrationStatus: "Suspended", returns: [] });
+    expect(result.rawOutput).toMatchObject({ plan: "basic" });
+    expect(mocks.fetchReturns).not.toHaveBeenCalled();
   });
 
   it("reports not_found when the GSTIN is not registered, and failed for other API errors", async () => {
