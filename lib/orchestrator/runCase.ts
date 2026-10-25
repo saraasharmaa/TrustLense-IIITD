@@ -7,7 +7,8 @@ import type { SourceAdapter, SourceOutcomes } from "@/lib/adapters/types";
 import { env } from "@/lib/env";
 import { evaluate, score } from "@/lib/scoring";
 import { buildNarrative } from "@/lib/llm/narrative";
-import type { AdapterId, SourceStatus } from "@/lib/types";
+import { templateNarrative } from "@/lib/llm/template-narrative";
+import type { AdapterId, Finding, ScoreResult, SourceStatus } from "@/lib/types";
 import { emitEvent } from "./events";
 import { runAdapter, type AttemptedResult } from "./retry";
 
@@ -19,6 +20,7 @@ import {
   loadKeptOutcomes,
   markCaseRunning,
   saveDirectors,
+  saveNarrative,
   saveFindings,
   toAdapterInput,
   updateSourceRun,
@@ -277,9 +279,32 @@ export async function finalizeCase(
   const result = score(findings, outcomes);
   fireEvent(caseId, "score.computed", result);
 
-  const narrative = await buildNarrative(findings, result);
+  // The report goes out with the instant template summary; the model's wording replaces it when ready
+  const narrative = templateNarrative(findings, result);
   fireEvent(caseId, "narrative.ready", narrative);
 
   await finishCase(caseId, { status, score: result, narrative });
   await emitEvent(caseId, "report.ready", { caseId, status });
+  void upgradeNarrative(caseId, findings, result);
+}
+
+async function upgradeNarrative(
+  caseId: string,
+  findings: Finding[],
+  result: ScoreResult,
+): Promise<void> {
+  try {
+    const narrative = await buildNarrative(findings, result);
+    if (narrative.source !== "llm") return;
+    await saveNarrative(caseId, narrative);
+    fireEvent(caseId, "narrative.ready", narrative);
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        caseId,
+        event: "narrative.upgrade_failed",
+        error: String(err).slice(0, 200),
+      }),
+    );
+  }
 }
