@@ -6,6 +6,8 @@ import { AppError } from "@/lib/errors";
 export type LlmProvider = "anthropic" | "openai" | "gemini";
 
 // Gemini is called through its OpenAI-compatible endpoint, so it reuses the OpenAI SDK
+// A hung free-tier request must fail fast so the adapter can report it, not wait for the SDK default
+const REQUEST_TIMEOUT_MS = 30_000;
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/";
 
 // LLM_PROVIDER wins; otherwise the first provider with a key: Anthropic, OpenAI, Gemini
@@ -46,7 +48,12 @@ async function askOpenAiCompatible(
   prompt: Prompt,
   config: { apiKey: string | undefined; model: string; baseURL?: string },
 ): Promise<string> {
-  const client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+  const client = new OpenAI({
+    apiKey: config.apiKey,
+    baseURL: config.baseURL,
+    timeout: REQUEST_TIMEOUT_MS,
+    maxRetries: 1,
+  });
   const reply = await client.chat.completions.create(
     {
       model: config.model,

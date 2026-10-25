@@ -87,6 +87,8 @@ describe("completeJson", () => {
     expect(openaiOptions).toHaveBeenCalledWith({
       apiKey: "g",
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      timeout: 30000,
+      maxRetries: 1,
     });
   });
 
