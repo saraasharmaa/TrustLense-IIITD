@@ -123,6 +123,31 @@ describe("search", () => {
   });
 });
 
+describe("fetchPage timeout", () => {
+  it("always passes an abort signal, so a page that never answers cannot hang forever", async () => {
+    fetchMock.mockResolvedValue(
+      json({ results: [{ url: "https://a.example", title: "T", text: "body" }], errors: [] }),
+    );
+    const { fetchPage } = await load();
+    await fetchPage("https://a.example");
+    expect(fetchMock.mock.calls[0]![1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("still stops when the caller aborts", async () => {
+    fetchMock.mockImplementation(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) =>
+          init.signal.addEventListener("abort", () => reject(init.signal.reason)),
+        ),
+    );
+    const { fetchPage } = await load();
+    const controller = new AbortController();
+    const pending = fetchPage("https://slow.example", { signal: controller.signal });
+    controller.abort(new Error("case cap"));
+    await expect(pending).rejects.toThrow("case cap");
+  });
+});
+
 describe("fetchPage", () => {
   it("returns the page text", async () => {
     fetchMock.mockResolvedValue(

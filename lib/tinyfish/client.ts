@@ -9,6 +9,13 @@ const AGENT_URL = "https://agent.tinyfish.ai/v1/automation/run-sse";
 const SEARCH_URL = "https://api.search.tinyfish.ai";
 const FETCH_URL = "https://api.fetch.tinyfish.ai";
 const EVENT_INTERVAL_MS = 500;
+// Search and Fetch normally answer in seconds; some pages never do, and one hung page must not stall a whole case
+const LIGHT_CALL_TIMEOUT_MS = 25_000;
+
+function withTimeout(signal?: AbortSignal): AbortSignal {
+  const timeout = AbortSignal.timeout(LIGHT_CALL_TIMEOUT_MS);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
 
 const RunError = z.object({
   code: z.string().optional(),
@@ -128,7 +135,10 @@ export async function search(
 ): Promise<SearchHit[]> {
   const params = new URLSearchParams({ query });
   if (opts.news) params.set("domain_type", "news");
-  const res = await fetch(`${SEARCH_URL}?${params}`, { headers: headers(), signal: opts.signal });
+  const res = await fetch(`${SEARCH_URL}?${params}`, {
+    headers: headers(),
+    signal: withTimeout(opts.signal),
+  });
   if (!res.ok) return failFromResponse(res, "TinyFish Search");
 
   const parsed = SearchResponse.parse(await res.json());
@@ -149,7 +159,7 @@ export async function fetchPage(
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ urls: [url], format: "markdown" }),
-    signal: opts.signal,
+    signal: withTimeout(opts.signal),
   });
   if (!res.ok) return failFromResponse(res, "TinyFish Fetch");
 

@@ -7,7 +7,9 @@ import { AdapterId } from "@/lib/types";
 const RAW_PREVIEW_CHARS = 3000;
 
 function usage(): never {
-  console.error('Usage: npm run spike -- <gst|news> <GSTIN | "legal name"> [--runs N]');
+  console.error(
+    'Usage: npm run spike -- <gst|mca|news|legal> <GSTIN | CIN | "legal name"> [--runs N]',
+  );
   process.exit(2);
 }
 
@@ -21,7 +23,9 @@ function parseArgs() {
 }
 
 function toInput(adapter: AdapterId, identifier: string): AdapterInput {
-  return adapter === "news" ? { legalName: identifier } : { gstin: identifier.toUpperCase() };
+  if (adapter === "news" || adapter === "legal") return { legalName: identifier };
+  if (adapter === "mca") return { cin: identifier.toUpperCase() };
+  return { gstin: identifier.toUpperCase() };
 }
 
 async function runOnce(adapter: AdapterId, input: AdapterInput) {
