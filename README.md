@@ -26,7 +26,7 @@ Click path: **Sunrise Textiles** chip, **Start check**, watch the lanes finish, 
 | TinyFish Agent, Search, Fetch | Reached with a real key (2026-10-24) |
 | GST (live) | The portal shows an image CAPTCHA, so a live run reports `captcha_blocked`; there is no bypass |
 | News (live) | Verified end to end on 2026-10-25 for one listed company (Search, Fetch, Gemini classification, 12 s) |
-| MCA, Legal | Built and unit-tested against a mocked client; **not** run live |
+| MCA, Legal | Run live once on 2026-10-25 (Reliance CIN and name): both timed out after reaching the portal pages, so live runs report `timeout`; demo uses labelled replay |
 | Udyam, Regulatory | Replay only; no live adapter |
 
 Details and the spike table are in `docs/PROGRESS.md`.
