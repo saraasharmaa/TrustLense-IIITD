@@ -247,6 +247,16 @@ async function execute(caseId: string, options: RunCaseOptions): Promise<void> {
     clearTimeout(capTimer);
   }
 
+  await finalizeCase(caseId, requested, outcomes, statuses);
+}
+
+// Scores whatever outcomes exist and publishes the report; shared by full runs and manual entry
+export async function finalizeCase(
+  caseId: string,
+  requested: AdapterId[],
+  outcomes: SourceOutcomes,
+  statuses: SourceStatus[],
+): Promise<void> {
   const status = caseStatus(statuses);
   if (status === "failed") {
     await finishCase(caseId, { status });
