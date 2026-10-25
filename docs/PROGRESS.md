@@ -4,7 +4,7 @@ Update at the end of every milestone. Keep it short and factual.
 
 ## Next up
 
-- **Next up (A):** add credits to the Anthropic account behind `ANTHROPIC_API_KEY`, rerun `npm run spike -- news "Reliance Industries Limited"`, then run MCA and Legal spikes; decide live or replay per adapter.
+- **Next up (A):** Legal and Udyam have no live source. Sandbox.co.in has no court-case search and Udyam only through consented EntityLocker documents; the portals use CAPTCHA/OTP. To make them live, add a licensed provider with court-case search and Udyam verification, then write an adapter like `lib/adapters/mca-api.ts`. The IBBI public-announcements page can be fetched without a CAPTCHA but lists only the latest weeks, so it cannot show that a company is clean and was not used.
 - **Next up (B):** none assigned. The MVP UI (home, run, report, watchlist, alerts) was built by A on `feat/ui-*`; remaining polish: name search, print/export view, accessibility pass, Udyam/regulatory lanes.
 
 ## Requests for B
