@@ -13,14 +13,12 @@ async function blockedGstCase(mode: "live" | "demo" = "live") {
     .update(cases)
     .set({ status: "failed", requestedSources: ["gst"] })
     .where(eq(cases.id, caseId));
-  await db()
-    .insert(sourceRuns)
-    .values({
-      caseId,
-      adapter: "gst",
-      status: "captcha_blocked",
-      error: "Task blocked by CAPTCHA",
-    });
+  await db().insert(sourceRuns).values({
+    caseId,
+    adapter: "gst",
+    status: "captcha_blocked",
+    error: "Task blocked by CAPTCHA",
+  });
   return caseId;
 }
 
