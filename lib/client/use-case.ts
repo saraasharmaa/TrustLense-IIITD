@@ -18,6 +18,9 @@ const EVENT_TYPES = [
 ] as const;
 const TERMINAL = ["report.ready", "case.failed"];
 const REFRESH_DELAY_MS = 250;
+// The model-written summary can arrive after the report; look for it a few times
+const NARRATIVE_POLL_MS = 3000;
+const NARRATIVE_POLLS = 8;
 
 export type CaseState =
   | { state: "loading" }
@@ -66,6 +69,22 @@ export function useCase(caseId: string) {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [caseId, reload]);
+
+  const waitingForSummary =
+    view !== null &&
+    view.status !== "queued" &&
+    view.status !== "running" &&
+    view.narrative?.source === "template";
+  useEffect(() => {
+    if (!waitingForSummary) return;
+    let polls = 0;
+    const timer = setInterval(() => {
+      polls += 1;
+      void reload();
+      if (polls >= NARRATIVE_POLLS) clearInterval(timer);
+    }, NARRATIVE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [waitingForSummary, reload]);
 
   const state: CaseState = view
     ? { state: "ready", view, progress }
