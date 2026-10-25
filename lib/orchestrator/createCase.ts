@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db/client";
 import { cases, subjects } from "@/lib/db/schema";
@@ -67,7 +67,16 @@ async function findOrCreateSubject(
       .select({ id: subjects.id })
       .from(subjects)
       .where(and(eq(subjects.workspaceId, WORKSPACE), eq(subjects.gstin, parsed.gstin)));
-    if (existing) return existing.id;
+    if (existing) {
+      // A CIN supplied later fills the gap on a subject created without one
+      if (ids.cin) {
+        await db()
+          .update(subjects)
+          .set({ cin: ids.cin })
+          .where(and(eq(subjects.id, existing.id), isNull(subjects.cin)));
+      }
+      return existing.id;
+    }
   }
   const [row] = await db()
     .insert(subjects)
