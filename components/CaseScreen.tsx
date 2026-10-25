@@ -61,7 +61,14 @@ export function CaseScreen({ caseId }: { caseId: string }) {
         </Card>
       )}
       <div className="grid gap-6 lg:grid-cols-2">
-        <AgentLanes runs={view.sourceRuns} progress={progress} caseDone={done} />
+        <AgentLanes
+          runs={view.sourceRuns}
+          progress={progress}
+          caseDone={done}
+          caseId={caseId}
+          mode={view.mode}
+          onChanged={() => void reload()}
+        />
         {reported ? (
           <CategoryBreakdown rows={view.categoryBreakdown} />
         ) : (
@@ -71,7 +78,10 @@ export function CaseScreen({ caseId }: { caseId: string }) {
       {reported && (
         <>
           <SummaryCard narrative={view.narrative} />
-          <FindingsList findings={view.findings} />
+          <FindingsList
+            findings={view.findings}
+            manualAdapters={view.sourceRuns.filter((r) => r.isManual).map((r) => r.adapter)}
+          />
           <SourcesPanel runs={view.sourceRuns} />
         </>
       )}
