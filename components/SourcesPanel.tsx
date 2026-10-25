@@ -28,6 +28,7 @@ export function SourcesPanel({ runs }: { runs: CaseView["sourceRuns"] }) {
                     {STATUS_LABEL[run.status].text}
                   </Badge>
                   {run.isReplay && <ReplayBadge />}
+                  {run.isManual && <Badge tone="medium">Entered by analyst</Badge>}
                 </span>
               </td>
               <td className="py-2 pr-3">{run.attempt}</td>

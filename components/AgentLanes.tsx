@@ -1,3 +1,4 @@
+import { GstManualEntry } from "@/components/GstManualEntry";
 import { ReplayBadge } from "@/components/ReplayBadge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -8,9 +9,14 @@ interface Props {
   runs: CaseView["sourceRuns"];
   progress: Record<string, string>;
   caseDone: boolean;
+  caseId: string;
+  mode: "live" | "demo";
+  onChanged: () => void;
 }
 
-export function AgentLanes({ runs, progress, caseDone }: Props) {
+const UNBLOCKABLE = ["captcha_blocked", "failed", "timeout"];
+
+export function AgentLanes({ runs, progress, caseDone, caseId, mode, onChanged }: Props) {
   return (
     <Card className="space-y-1 p-0">
       <h2 className="px-5 pt-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -31,9 +37,17 @@ export function AgentLanes({ runs, progress, caseDone }: Props) {
               <div className="min-w-0">
                 <p className="font-medium">{ADAPTER_LABEL[adapter]}</p>
                 {detail && <p className="truncate text-sm text-muted-foreground">{detail}</p>}
+                {adapter === "gst" &&
+                  mode === "live" &&
+                  caseDone &&
+                  run &&
+                  UNBLOCKABLE.includes(run.status) && (
+                    <GstManualEntry caseId={caseId} onSaved={onChanged} />
+                  )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 {run?.isReplay && <ReplayBadge />}
+                {run?.isManual && <Badge tone="medium">Entered by analyst</Badge>}
                 <Badge tone={tone}>{text}</Badge>
                 {run?.durationMs != null && (
                   <span className="text-xs text-muted-foreground">

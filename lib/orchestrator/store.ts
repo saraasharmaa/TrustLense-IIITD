@@ -55,6 +55,7 @@ export interface SourceRunPatch {
   status: SourceStatus;
   attempt?: number;
   isReplay?: boolean;
+  isManual?: boolean;
   durationMs?: number;
   tinyfishRunId?: string;
   evidenceUrl?: string;

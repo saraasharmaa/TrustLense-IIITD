@@ -43,6 +43,7 @@ export async function getCaseView(caseId: string) {
       adapter: r.adapter,
       status: r.status,
       isReplay: r.isReplay,
+      isManual: r.isManual,
       durationMs: r.durationMs,
       attempt: r.attempt,
       error: r.error,

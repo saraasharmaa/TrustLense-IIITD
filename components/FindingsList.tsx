@@ -6,7 +6,7 @@ import type { ViewFinding } from "@/lib/client/schemas";
 
 const RANK = { critical: 4, high: 3, medium: 2, low: 1, info: 0 } as const;
 
-function Evidence({ finding }: { finding: ViewFinding }) {
+function Evidence({ finding, manualAdapters }: { finding: ViewFinding; manualAdapters: string[] }) {
   return (
     <ul className="space-y-2">
       {finding.evidence.map((e) => (
@@ -18,6 +18,7 @@ function Evidence({ finding }: { finding: ViewFinding }) {
             </a>
             <span>retrieved {new Date(e.retrievedAt).toLocaleString()}</span>
             {e.isReplay && <ReplayBadge />}
+            {manualAdapters.includes(e.adapter) && <Badge tone="medium">Entered by analyst</Badge>}
           </p>
         </li>
       ))}
@@ -25,7 +26,13 @@ function Evidence({ finding }: { finding: ViewFinding }) {
   );
 }
 
-function FindingRow({ finding }: { finding: ViewFinding }) {
+function FindingRow({
+  finding,
+  manualAdapters,
+}: {
+  finding: ViewFinding;
+  manualAdapters: string[];
+}) {
   return (
     <li id={`finding-${finding.id}`}>
       <details className="rounded-lg border">
@@ -46,14 +53,20 @@ function FindingRow({ finding }: { finding: ViewFinding }) {
           <p className="text-xs text-muted-foreground">
             Confidence {Math.round(finding.confidence * 100)}%
           </p>
-          <Evidence finding={finding} />
+          <Evidence finding={finding} manualAdapters={manualAdapters} />
         </div>
       </details>
     </li>
   );
 }
 
-export function FindingsList({ findings }: { findings: ViewFinding[] }) {
+export function FindingsList({
+  findings,
+  manualAdapters,
+}: {
+  findings: ViewFinding[];
+  manualAdapters: string[];
+}) {
   const sorted = [...findings].sort((a, b) => RANK[b.severity] - RANK[a.severity]);
   return (
     <Card className="space-y-3">
@@ -63,7 +76,7 @@ export function FindingsList({ findings }: { findings: ViewFinding[] }) {
       ) : (
         <ul className="space-y-2">
           {sorted.map((f) => (
-            <FindingRow key={f.id} finding={f} />
+            <FindingRow key={f.id} finding={f} manualAdapters={manualAdapters} />
           ))}
         </ul>
       )}

@@ -109,6 +109,8 @@ export const sourceRuns = pgTable(
     status: sourceStatus("status").notNull().default("pending"),
     attempt: integer("attempt").notNull().default(1),
     isReplay: boolean("is_replay").notNull().default(false),
+    // Typed in by an analyst who solved the portal CAPTCHA themselves; never produced by an agent
+    isManual: boolean("is_manual").notNull().default(false),
     startedAt: ts("started_at"),
     finishedAt: ts("finished_at"),
     durationMs: integer("duration_ms"),

@@ -37,6 +37,7 @@ const ViewRun = z.object({
   adapter: AdapterId,
   status: SourceStatus,
   isReplay: z.boolean(),
+  isManual: z.boolean(),
   durationMs: z.number().nullable(),
   attempt: z.number(),
   error: z.string().nullable(),

@@ -24,7 +24,7 @@ Click path: **Sunrise Textiles** chip, **Start check**, watch the lanes finish, 
 |---|---|
 | All demo companies (Aravali, Sunrise, Kaveri) | Replay of synthetic fixtures, labelled "Replay / demo data" everywhere |
 | TinyFish Agent, Search, Fetch | Reached with a real key (2026-10-24) |
-| GST (live) | The portal shows an image CAPTCHA, so a live run reports `captcha_blocked`; there is no bypass |
+| GST (live) | The portal shows an image CAPTCHA, so a live run reports `captcha_blocked`; there is no bypass. The analyst can open the portal, solve the CAPTCHA themselves and enter the registration status; the report labels it "Entered by analyst" and rescoring runs immediately (verified in the browser on 2026-10-25) |
 | News (live) | Verified end to end on 2026-10-25 for one listed company (Search, Fetch, Gemini classification, 12 s) |
 | MCA, Legal | Run live once on 2026-10-25 (Reliance CIN and name): both timed out after reaching the portal pages, so live runs report `timeout`; demo uses labelled replay |
 | Udyam, Regulatory | Replay only; no live adapter |
